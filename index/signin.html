@@ -3,67 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Услуги</title>
+    <title>Вход</title>
+    <link rel="stylesheet" href="styles.css"> 
 </head>
 <body>
-
-     <header class="header">
+    <header class="header">
         <div class="container">
             <nav class="nav">
                 <div class="logo">
                     <span class="logo-text">АВТОСАЛОН</span>
                 </div>
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="index.html">Главная</a></li>
                     <li><a href="cars.html">Автомобили</a></li>
                     <li><a href="uslugi.html">Услуги</a></li>
                     <li><a href="about.html">О нас</a></li>
-                    <li><a href="#contact">Контакты</a></li>
+                    <li><a href="contact.html">Контакты</a></li>
+                    <li><a href="signin.html">Войти</a></li>
                 </ul>
             </nav>
         </div>
     </header>
-
-    <section class="services" id="services">
+    <section class="signin" id="signin">
         <div class="container">
-            <h2 class="section-title">Наши услуги</h2>
-            <p class="section-subtitle">Полный спектр услуг для комфортной покупки автомобиля</p>
-            <div class="services-grid">
-                <div class="service-card">
-                    <div class="service-icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M4 12h16M4 6h16M4 18h16"/>
-                        </svg>
+            <h2 class="section-title">Войдите в свой аккаунт</h2>
+            <div class="signin-content">
+                <form class="signin-form">
+                    <div class="form-group">
+                        <label for="login">Логин</label>
+                        <input type="text" id="login" name="login">
                     </div>
-                    <h3 class="service-title">Trade-In</h3>
-                    <p class="service-description">Выкуп вашего автомобиля по рыночной цене с зачетом стоимости при покупке нового</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="2" y="7" width="20" height="14" rx="2"/>
-                            <path d="M16 3v4M8 3v4"/>
-                        </svg>
+                    <div class="form-group">
+                        <label for="password">Пароль</label>
+                        <input type="password" id="password" name="password">
                     </div>
-                    <h3 class="service-title">Кредит</h3>
-                    <p class="service-description">Выгодные условия автокредитования от ведущих банков-партнеров с минимальной ставкой</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-icon">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M9 12l2 2 4-4"/>
-                            <circle cx="12" cy="12" r="10"/>
-                        </svg>
+                    <div class="form-group">
+                        <label for="login">Email</label>
+                        <input type="email" id="email" name="email">
                     </div>
-                    <h3 class="service-title">Гарантия</h3>
-                    <p class="service-description">Официальная гарантия на все автомобили с возможностью продления срока</p>
-                </div>
+                </form>
+            </div>
+            <div class="signin-buttons">
+                <a href="#"  class="btn sign-in-bt">Войти</a>
             </div>
         </div>
     </section>
@@ -101,8 +82,7 @@
                         <a href="#" aria-label="Telegram">Telegram</a>
                     </div>
                 </div>
-            </div>
-            
+            </div>          
         </div>
     </footer>
 </body>

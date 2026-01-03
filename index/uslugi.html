@@ -4,70 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>О нас</title>
+    <title>Услуги</title>
 </head>
 <body>
-    <header class="header">
+
+     <header class="header">
         <div class="container">
             <nav class="nav">
                 <div class="logo">
                     <span class="logo-text">АВТОСАЛОН</span>
                 </div>
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+                
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="index.html">Главная</a></li>
                     <li><a href="cars.html">Автомобили</a></li>
                     <li><a href="uslugi.html">Услуги</a></li>
                     <li><a href="about.html">О нас</a></li>
-                    <li><a href="contact.html">Контакты</a></li>
+                    <li><a href="#contact">Контакты</a></li>
+                    <li><a href="signin.html">Войти</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <section class="about" id="about">
+    <section class="services" id="services">
         <div class="container">
-            <div class="about-content">
-                <div class="about-text">
-                    <h2 class="section-title">О компании</h2>
-                    <p class="about-description">Мы работаем на рынке продажи премиум автомобилей более 15 лет. За это время мы помогли тысячам клиентов найти автомобиль их мечты.</p>
-                    <p class="about-description">Наша миссия — сделать покупку автомобиля максимально комфортной, прозрачной и выгодной для каждого клиента.</p>
-                    <div class="about-features">
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Проверенные автомобили</span>
-                        </div>
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Прозрачная история</span>
-                        </div>
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Честные цены</span>
-                        </div>
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Гарантия качества</span>
-                        </div>
+            <h2 class="section-title">Наши услуги</h2>
+            <p class="section-subtitle">Полный спектр услуг для комфортной покупки автомобиля</p>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M4 12h16M4 6h16M4 18h16"/>
+                        </svg>
                     </div>
+                    <h3 class="service-title">Trade-In</h3>
+                    <p class="service-description">Выкуп вашего автомобиля по рыночной цене с зачетом стоимости при покупке нового</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="2" y="7" width="20" height="14" rx="2"/>
+                            <path d="M16 3v4M8 3v4"/>
+                        </svg>
+                    </div>
+                    <h3 class="service-title">Кредит</h3>
+                    <p class="service-description">Выгодные условия автокредитования от ведущих банков-партнеров с минимальной ставкой</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 12l2 2 4-4"/>
+                            <circle cx="12" cy="12" r="10"/>
+                        </svg>
+                    </div>
+                    <h3 class="service-title">Гарантия</h3>
+                    <p class="service-description">Официальная гарантия на все автомобили с возможностью продления срока</p>
                 </div>
             </div>
         </div>
     </section>
 
-     <footer class="footer">
+    <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
