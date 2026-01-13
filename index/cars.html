@@ -21,7 +21,7 @@
                     <li><a href="uslugi.html">Услуги</a></li>
                     <li><a href="about.html">О нас</a></li>
                     <li><a href="#contact">Контакты</a></li>
-                    <li><a href="signin.html">Войти</a></li>
+                    <li><a href="#" id="signinLink">Войти</a></li>
                 </ul>
             </nav>
         </div>
@@ -280,6 +280,71 @@
             </div>
         </div>
     </footer>
-    
+     <div class="modal-overlay" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Вход в систему</h2>
+                <button class="modal-close" id="closeLoginModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Введите ваш email" required>
+                    <div class="error-message" id="loginEmailError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="Введите ваш пароль" required>
+                    <div class="error-message" id="loginPasswordError"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelLoginBtn">Отмена</button>
+                <button class="btn btn-primary" id="confirmLoginBtn">Войти</button>
+            </div>
+            <div class="modal-footer-links">
+                <p>Нет аккаунта? <a href="#" id="showRegisterModalLink">Зарегистрироваться</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Регистрация</h2>
+                <button class="modal-close" id="closeRegisterModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="regName">Имя</label>
+                    <input type="text" id="regName" placeholder="Введите ваше имя" required>
+                    <div class="error-message" id="regNameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" placeholder="Введите ваш email" required>
+                    <div class="error-message" id="regEmailError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Пароль</label>
+                    <input type="password" id="regPassword" placeholder="Придумайте пароль" required>
+                    <div class="error-message" id="regPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Подтвердите пароль</label>
+                    <input type="password" id="regConfirmPassword" placeholder="Повторите пароль" required>
+                    <div class="error-message" id="regConfirmPasswordError"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRegisterBtn">Отмена</button>
+                <button class="btn btn-primary" id="confirmRegisterBtn">Зарегистрироваться</button>
+            </div>
+            <div class="modal-footer-links">
+                <p>Уже есть аккаунт? <a href="#" id="showLoginModalLink">Войти</a></p>
+            </div>
+        </div>
+    </div>
+    <script src="../view/SignInView.js"></script>
 </body>
 </html>
