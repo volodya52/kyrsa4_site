@@ -82,11 +82,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function validateRegisterForm() {
         const name = document.getElementById('regName').value;
+        const phone=document.getElementById('regPhone').value
         const email = document.getElementById('regEmail').value;
         const password = document.getElementById('regPassword').value;
         const confirmPassword = document.getElementById('regConfirmPassword').value;
         let isValid = true;
         document.getElementById('regNameError').textContent = '';
+        document.getElementById('regPhoneError').textContent='';
         document.getElementById('regEmailError').textContent = '';
         document.getElementById('regPasswordError').textContent = '';
         document.getElementById('regConfirmPasswordError').textContent = '';
@@ -118,6 +120,14 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (password !== confirmPassword) {
             document.getElementById('regConfirmPasswordError').textContent = 'Пароли не совпадают';
             isValid = false;
+        }
+
+        if(!phone){
+            document.getElementById('regPhoneError').textContent='Введите номер телефона';
+            isValid=false;
+        }else if(phone.length<11||phone.length>11){
+            document.getElementById('regPhoneError').textContent='Длина номера должна быть не менее 11 и не более 12 цифр';
+            isValid=false;
         }
         
         return isValid;
