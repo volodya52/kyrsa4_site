@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-
     <title>Автомобили</title>
 </head>
 <body>
@@ -20,7 +19,7 @@
                     <li><a href="cars.html">Автомобили</a></li>
                     <li><a href="uslugi.html">Услуги</a></li>
                     <li><a href="about.html">О нас</a></li>
-                    <li><a href="#contact">Контакты</a></li>
+                    <li><a href="contact.html">Контакты</a></li>
                     <li><a href="#" id="signinLink">Войти</a></li>
                 </ul>
             </nav>
@@ -29,13 +28,92 @@
 
     <section class="featured-cars" id="cars">
         <div class="container">
-            <div class="search" id="car-search">
-                <label for="Поиск">Поиск</label>
-                <input type="text" id="search" name="search">
+            
+            <div class="search-container">
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    id="searchInput" 
+                    placeholder="Введите марку, модель или характеристики автомобиля..."
+                >
+                <button class="search-btn" id="searchButton">Найти</button>
             </div>
-            <h2 class="section-title">Каталог</h2>
-            <div class="cars-grid">
-                <div class="car-card">
+            
+            <div class="active-filters" id="activeFilters">
+               
+            </div>
+            
+            <div class="results-info" id="resultsInfo">
+                Найдено автомобилей: <span id="carsCount">7</span>
+            </div>
+            
+            <div class="filters-section">
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <label for="brandFilter">Марка</label>
+                        <select class="filter-select" id="brandFilter">
+                            <option value="">Все марки</option>
+                            <option value="bmw">BMW</option>
+                            <option value="mercedes">Mercedes-Benz</option>
+                            <option value="audi">Audi</option>
+                            <option value="porsche">Porsche</option>
+                            <option value="lexus">Lexus</option>
+                            <option value="range">Range Rover</option>
+                            <option value="toyota">Toyota</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="typeFilter">Тип кузова</label>
+                        <select class="filter-select" id="typeFilter">
+                            <option value="">Все типы</option>
+                            <option value="sedan">Седан</option>
+                            <option value="suv">Внедорожник</option>
+                            <option value="hatchback">Хэтчбек</option>
+                            <option value="coupe">Купе</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="yearFilter">Год выпуска</label>
+                        <select class="filter-select" id="yearFilter">
+                            <option value="">Любой год</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022 и старше</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="priceFrom">Цена от, ₽</label>
+                        <input type="number" class="filter-input" id="priceFrom" placeholder="0" min="0">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="priceTo">Цена до, ₽</label>
+                        <input type="number" class="filter-input" id="priceTo" placeholder="10000000" min="0">
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="statusFilter">Статус</label>
+                        <select class="filter-select" id="statusFilter">
+                            <option value="">Все</option>
+                            <option value="new">Новый</option>
+                            <option value="used">С пробегом</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button class="filter-btn" id="applyFilters">Применить фильтры</button>
+                        <button class="filter-btn filter-btn-reset" id="resetFilters">Сбросить</button>
+                    </div>
+                </div>
+            </div>
+            
+            <h2 class="section-title">Каталог автомобилей</h2>
+            <div class="cars-grid" id="carsGrid">
+                <!-- Карточки автомобилей с data-атрибутами для фильтрации -->
+                <div class="car-card" data-brand="bmw" data-type="sedan" data-year="2024" data-price="4500000" data-status="new" data-milage="50">
                     <div class="car-image">
                         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuEyaN9tf0cgJd2hYwpbUPrjBdsRfIgUbvXw&s" alt="BMW 5 Series">
                         <span class="car-badge">Новый</span>
@@ -65,7 +143,7 @@
                     </div>
                 </div>
 
-                <div class="car-card">
+                <div class="car-card" data-brand="mercedes" data-type="suv" data-year="2024" data-price="6200000" data-status="new" data-milage="0">
                     <div class="car-image">
                         <img src="https://aurum-motors.ru/wp-content/uploads/elementor/thumbs/Mercedes-Benz-GLE-450-4MATIC-qvzlmpbqa5t5ayfoii799srjemgs4lcg4qh0yzpchs.jpg" alt="Mercedes-Benz GLE">
                         <span class="car-badge">Новый</span>
@@ -95,7 +173,7 @@
                     </div>
                 </div>
 
-                <div class="car-card">
+                <div class="car-card" data-brand="audi" data-type="sedan" data-year="2023" data-price="3800000" data-status="used" data-milage="15000">
                     <div class="car-image">
                         <img src="https://i.gaw.to/vehicles/photos/40/30/403069-2023-audi-a6.jpg?1024x640" alt="Audi A6">
                     </div>
@@ -124,7 +202,7 @@
                     </div>
                 </div>
 
-                <div class="car-card">
+                <div class="car-card" data-brand="porsche" data-type="suv" data-year="2024" data-price="7500000" data-status="new" data-milage="0">
                     <div class="car-image">
                         <img src="https://carsweek.ru/upload/resize_cache/iblock/608/1200_900_1/j2u2z7wma5k8yfo6pahsw4z5zdo4k2z7.jpg" alt="Porsche Cayenne">
                         <span class="car-badge badge-featured">Хит продаж</span>
@@ -154,7 +232,7 @@
                     </div>
                 </div>
 
-                <div class="car-card">
+                <div class="car-card" data-brand="lexus" data-type="sedan" data-year="2023" data-price="3200000" data-status="used" data-milage="8000">
                     <div class="car-image">
                         <img src="https://s.auto.drom.ru/i24260/c/photos/fullsize/lexus/es250/gen473_lexus_es250_1024972.jpg" alt="Lexus ES">
                     </div>
@@ -183,7 +261,7 @@
                     </div>
                 </div>
 
-                <div class="car-card">
+                <div class="car-card" data-brand="range" data-type="suv" data-year="2024" data-price="8900000" data-status="new" data-milage="0">
                     <div class="car-image">
                         <img src="https://landrover-avilon.ru/wp-content/uploads/2023/01/637867555190618090kc.jpg" alt="Range Rover Sport">
                         <span class="car-badge">Новый</span>
@@ -213,9 +291,9 @@
                     </div>
                 </div>
 
-                <div class="car-card">
+                <div class="car-card" data-brand="toyota" data-type="suv" data-year="2024" data-price="4900000" data-status="used" data-milage="10000">
                     <div class="car-image">
-                        <img src="https://aurum-motors.ru/wp-content/uploads/2024/05/Toyota-RAV4.jpg" alt="Range Rover Sport">
+                        <img src="https://aurum-motors.ru/wp-content/uploads/2024/05/Toyota-RAV4.jpg" alt="Toyota RAV4">
                     </div>
                     <div class="car-info">
                         <h3 class="car-title">Toyota RAV4</h3>
@@ -244,6 +322,7 @@
             </div>
         </div>
     </section>
+    
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -280,7 +359,8 @@
             </div>
         </div>
     </footer>
-     <div class="modal-overlay" id="loginModal">
+    
+    <div class="modal-overlay" id="loginModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Вход в систему</h2>
@@ -345,6 +425,7 @@
             </div>
         </div>
     </div>
+    
     <script src="../view/SignInView.js"></script>
 </body>
 </html>
