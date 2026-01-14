@@ -7,7 +7,7 @@ class DatabaseCreate{
     }
 
     initDatabase() {
-    // SQL-запросы для создания таблиц
+
     const createUsersTable = `
     CREATE TABLE IF NOT EXISTS Users(
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,8 +20,9 @@ class DatabaseCreate{
     `;
 
     const createCarsTable = `
-    CREATE TABLE IF NOT EXISTS Cars(
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,  // ИСПРАВЛЕНО: было PRIMARY AUTOINCREMENT
+    CREATE TABLE IF NOT EXISTS Cars
+    (
+    ID INTEGER PRIMARY KEY AUTOINCREMENT,  
     Brand TEXT NOT NULL,
     Model TEXT NOT NULL,
     Year INTEGER NOT NULL,
@@ -35,15 +36,14 @@ class DatabaseCreate{
     Color TEXT NOT NULL,
     Description TEXT NOT NULL,
     Status TEXT DEFAULT 'В наличии',
-    Image_url TEXT,
-    Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP  // ДОБАВЬТЕ это поле
+    Image_url TEXT
     )
     `;
 
     const createRoleTable = `
         CREATE TABLE IF NOT EXISTS Roles
         (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,  // ИСПРАВЛЕНО
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,  
             Name TEXT NOT NULL
         )
     `;
@@ -51,7 +51,7 @@ class DatabaseCreate{
     const createTradeInTable = `
         CREATE TABLE IF NOT EXISTS TradeIn
         (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,  // ИСПРАВЛЕНО
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,  
             User_ID INTEGER NOT NULL,
             Car_ID INTEGER,
             Brand TEXT NOT NULL,
@@ -62,23 +62,21 @@ class DatabaseCreate{
             Condition TEXT NOT NULL,
             Phone TEXT NOT NULL,
             Status TEXT DEFAULT 'В ожидании',
-            Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  // ДОБАВЬТЕ
             FOREIGN KEY (User_ID) REFERENCES Users (ID) ON DELETE CASCADE,
-            FOREIGN KEY (Car_ID) REFERENCES Cars(ID) ON DELETE SET NULL  // ИСПРАВЛЕНО: было REFENCES
+            FOREIGN KEY (Car_ID) REFERENCES Cars(ID) ON DELETE SET NULL 
         )
     `;
 
     const createNewsTable = `
         CREATE TABLE IF NOT EXISTS News
         (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,  // ИСПРАВЛЕНО
+            ID INTEGER PRIMARY KEY AUTOINCREMENT, 
             Title TEXT NOT NULL,
             Description TEXT NOT NULL,
             Type TEXT NOT NULL,
             User_ID INTEGER,
             Car_ID INTEGER,
-            Image_url TEXT,
-            Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP  // ДОБАВЬТЕ
+            Image_url TEXT
         )
     `;
 
@@ -105,22 +103,23 @@ class DatabaseCreate{
     console.log('База данных инициализирована');
 }
 
-    addRoles(){
-        const roles=[
-            {name:'Администратор'},
-            {name:'Клиент'}
+    addRoles() {
+        const roles = [
+            { name: 'Администратор' },
+            { name: 'Клиент' }
         ];
 
-        roles.forEach(role=>{
+        roles.forEach(role => {
             this.db.run(
-                'INSERT OR IGNORE INTO Roles (Name) VALUE (?)',
+                'INSERT OR IGNORE INTO Roles (Name) VALUES (?)', 
                 [role.name],
-                (err)=>{
+                    (err) => {
+                        if (err) {
                     console.error(`Ошибка при добавлении роли ${role.name}:`, err.message);
-                }
-            )
-        })
-
+                    }
+                }   
+            );
+        });
     }
 
     addAdminUser(){
@@ -154,8 +153,7 @@ class DatabaseCreate{
     addUser(name, email, password, phone = null, roleId = 2) {
         return new Promise((resolve, reject) => {
             this.db.run(
-                `INSERT INTO Users (Name, Email, Password, Phone, Role_ID) 
-                 VALUES (?, ?, ?, ?, ?)`,
+                `INSERT INTO Users (Name, Email, Password, Phone, Role_ID) VALUES (?, ?, ?, ?, ?)`,
                 [name, email, password, phone, roleId],
                 function(err) {
                     if (err) {

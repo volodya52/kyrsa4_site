@@ -464,21 +464,14 @@ app.put('/api/admin/trade-ins/:id/status', requireAuth, requireAdmin, async (req
     }
 });
 
-// Маршруты для всех страниц сайта
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Запуск сервера
 app.listen(PORT, () => {
     console.log('=======================================');
     console.log(`Сервер запущен на http://localhost:${PORT}`);
     console.log('=======================================');
-    console.log('\nДоступные API:');
-    console.log('  POST /api/register  - Регистрация');
-    console.log('  POST /api/login     - Авторизация');
-    console.log('  GET  /api/cars      - Список автомобилей');
-    console.log('  POST /api/trade-in  - Создать заявку Trade-In');
-    console.log('  GET  /api/news      - Новости и акции');
-    console.log('=======================================');
+
 });
