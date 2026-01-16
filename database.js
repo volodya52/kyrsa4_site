@@ -14,6 +14,18 @@ class DatabaseCreate {
             )
         `;
 
+        const createFavoritesTable = `
+            CREATE TABLE IF NOT EXISTS Favorites (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            User_ID INTEGER NOT NULL,
+            Car_ID INTEGER NOT NULL,
+            FOREIGN KEY (User_ID) REFERENCES Users (ID) ON DELETE CASCADE,
+            FOREIGN KEY (Car_ID) REFERENCES Cars (ID) ON DELETE CASCADE,
+            UNIQUE(User_ID, Car_ID)
+        )
+        `;
+
+
         const createUsersTable = `
             CREATE TABLE IF NOT EXISTS Users (
                 ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +93,8 @@ class DatabaseCreate {
             createUsersTable,
             createCarsTable,
             createTradeInTable,
-            createNewsTable
+            createNewsTable,
+            createFavoritesTable
         ];
 
         tables.forEach((sql, index) => {

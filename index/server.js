@@ -694,6 +694,107 @@ app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =
     }
 });
 
+app.post('/api/user/favorites', requireAuth, async (req, res) => {
+    try {
+        const { carId } = req.body;
+        
+        if (!carId) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'ID автомобиля обязателен' 
+            });
+        }
+        
+        // Проверяем существование автомобиля
+        const car = await db.getCarById(carId);
+        if (!car) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Автомобиль не найден' 
+            });
+        }
+        
+        // Здесь можно сохранить в БД (нужно добавить таблицу Favorites)
+        // Пока просто возвращаем успех
+        res.json({
+            success: true,
+            message: 'Автомобиль добавлен в избранное'
+        });
+        
+    } catch (error) {
+        console.error('Ошибка добавления в избранное:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.get('/api/user/favorites', requireAuth, async (req, res) => {
+    try {
+        // Здесь нужно получить избранные автомобили пользователя из БД
+        // Пока возвращаем пустой массив или можно использовать заглушку
+        
+        // Если в БД есть таблица Favorites:
+        // const favorites = await db.getUserFavorites(req.user.ID);
+        
+        // Заглушка:
+        res.json({
+            success: true,
+            favorites: []
+        });
+        
+    } catch (error) {
+        console.error('Ошибка получения избранного:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.delete('/api/user/favorites/:id', requireAuth, async (req, res) => {
+    try {
+        const carId = parseInt(req.params.id);
+        
+        // Здесь нужно удалить из БД
+        // Пока просто возвращаем успех
+        
+        res.json({
+            success: true,
+            message: 'Автомобиль удален из избранного'
+        });
+        
+    } catch (error) {
+        console.error('Ошибка удаления из избранного:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// API для загрузки аватара (заглушка)
+app.post('/api/user/avatar', requireAuth, async (req, res) => {
+    try {
+        // В реальном проекте здесь нужно обрабатывать загрузку файла
+        // и сохранять его на сервере
+        
+        res.json({
+            success: true,
+            message: 'Аватар успешно обновлен',
+            avatar_url: '/uploads/avatars/' + Date.now() + '.jpg'
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки аватара:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
 // Получить все роли
 app.get('/api/admin/roles', requireAuth, requireAdmin, async (req, res) => {
     try {

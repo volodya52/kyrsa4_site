@@ -28,98 +28,137 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const user = JSON.parse(userData);
-        return user.role === 'admin';
+        return user.role === 'Администратор';
     }
     
     // Загружаем список пользователей
     async function loadUsers() {
-        try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch('/api/admin/users', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Ошибка загрузки пользователей');
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/users', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             }
-            
-            const users = await response.json();
-            renderUsersTable(users);
-        } catch (error) {
-            console.error('Ошибка:', error);
-            usersTableContainer.innerHTML = `
-                <div class="no-data">
-                    <p>Ошибка загрузки пользователей: ${error.message}</p>
-                    <button class="btn btn-primary" onclick="location.reload()">Повторить</button>
-                </div>
-            `;
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Ошибка сервера: ${response.status}`);
         }
+        
+        const result = await response.json();
+        console.log('Ответ от сервера:', result);
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Ошибка загрузки пользователей');
+        }
+        
+        // Проверяем структуру ответа
+        if (!result.users) {
+            throw new Error('Некорректный формат ответа от сервера');
+        }
+        
+        renderUsersTable(result.users);
+    } catch (error) {
+        console.error('Ошибка:', error);
+        usersTableContainer.innerHTML = `
+            <div class="no-data">
+                <p>Ошибка загрузки пользователей: ${error.message}</p>
+                <button class="btn btn-primary" onclick="location.reload()">Повторить</button>
+            </div>
+        `;
     }
+}
     
     // Отображаем таблицу пользователей
     function renderUsersTable(users) {
-        if (users.length === 0) {
-            usersTableContainer.innerHTML = `
-                <div class="no-data">
-                    <p>Пользователи не найдены</p>
-                </div>
-            `;
+    // Проверяем, что users - массив
+    if (!Array.isArray(users)) {
+        console.error('Ошибка: users не является массивом:', users);
+        usersTableContainer.innerHTML = `
+            <div class="no-data">
+                <p>Ошибка: получены некорректные данные</p>
+                <button class="btn btn-primary" onclick="loadUsers()">Повторить</button>
+            </div>
+        `;
+        return;
+    }
+    
+    if (users.length === 0) {
+        usersTableContainer.innerHTML = `
+            <div class="no-data">
+                <p>Пользователи не найдены</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let tableHTML = `
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Имя</th>
+                    <th>Email</th>
+                    <th>Телефон</th>
+                    <th>Роль</th>
+                    <th>Дата регистрации</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    users.forEach(user => {
+        // Проверяем структуру каждого пользователя
+        if (!user || typeof user !== 'object') {
+            console.warn('Некорректный пользователь:', user);
             return;
         }
         
-        let tableHTML = `
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Имя</th>
-                        <th>Email</th>
-                        <th>Телефон</th>
-                        <th>Роль</th>
-                        <th>Дата регистрации</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-        
-        users.forEach(user => {
-            tableHTML += `
-                <tr>
-                    <td>${user.id}</td>
-                    <td>${user.name}</td>
-                    <td>${user.email}</td>
-                    <td>${user.phone || 'Не указан'}</td>
-                    <td>
-                        <span class="role-badge ${user.role === 'admin' ? 'role-admin' : 'role-user'}">
-                            ${user.role === 'admin' ? 'Админ' : 'Пользователь'}
-                        </span>
-                    </td>
-                    <td>${new Date(user.created_at).toLocaleDateString('ru-RU')}</td>
-                    <td>
-                        <div class="user-actions">
-                            <button class="btn btn-warning btn-icon" onclick="editUser(${user.id})">
-                                Редактировать
-                            </button>
-                            <button class="btn btn-danger btn-icon" onclick="confirmDeleteUser(${user.id}, '${user.name}')">
-                                Удалить
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
+        // Форматируем дату с проверкой
+        let formattedDate = 'Не указана';
+        if (user.created_at) {
+            try {
+                formattedDate = new Date(user.created_at).toLocaleDateString('ru-RU');
+            } catch (e) {
+                console.warn('Ошибка форматирования даты:', e);
+            }
+        }
         
         tableHTML += `
-                </tbody>
-            </table>
+            <tr>
+                <td>${user.id || 'N/A'}</td>
+                <td>${user.name || 'Не указано'}</td>
+                <td>${user.email || 'Не указан'}</td>
+                <td>${user.phone || 'Не указан'}</td>
+                <td>
+                    <span class="role-badge ${(user.role === 'admin' || user.role === 'Администратор') ? 'role-admin' : 'role-user'}">
+                        ${user.role === 'admin' || user.role === 'Администратор' ? 'Админ' : 'Пользователь'}
+                    </span>
+                </td>
+                <td>${formattedDate}</td>
+                <td>
+                    <div class="user-actions">
+                        <button class="btn btn-warning btn-icon" onclick="editUser(${user.id || 0})">
+                            Редактировать
+                        </button>
+                        <button class="btn btn-danger btn-icon" onclick="confirmDeleteUser(${user.id || 0}, '${(user.name || 'Пользователь').replace(/'/g, "\\'")}')">
+                            Удалить
+                        </button>
+                    </div>
+                </td>
+            </tr>
         `;
-        
-        usersTableContainer.innerHTML = tableHTML;
-    }
+    });
+    
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+    
+    usersTableContainer.innerHTML = tableHTML;
+}
     
     // Открываем модальное окно для добавления пользователя
     function openAddUserModal() {
@@ -132,36 +171,47 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Открываем модальное окно для редактирования пользователя
     window.editUser = async function(userId) {
-        try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch(`/api/admin/users/${userId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error('Ошибка загрузки данных пользователя');
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch(`/api/admin/users/${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
-            
-            const user = await response.json();
-            currentUser = user;
-            
-            document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
-            document.getElementById('passwordHint').style.display = 'inline';
-            document.getElementById('userId').value = user.id;
-            document.getElementById('userName').value = user.name;
-            document.getElementById('userEmail').value = user.email;
-            document.getElementById('userPhone').value = user.phone || '';
-            document.getElementById('userRole').value = user.role;
-            document.getElementById('userPassword').value = '';
-            
-            userModal.style.display = 'flex';
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert('Ошибка загрузки данных пользователя: ' + error.message);
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Ошибка сервера: ${response.status}`);
         }
+        
+        const result = await response.json();
+        console.log('Данные пользователя для редактирования:', result);
+        
+        if (!result.success) {
+            throw new Error(result.error || 'Ошибка загрузки данных пользователя');
+        }
+        
+        if (!result.user) {
+            throw new Error('Некорректный формат данных пользователя');
+        }
+        
+        const user = result.user;
+        currentUser = user;
+        
+        document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
+        document.getElementById('passwordHint').style.display = 'inline';
+        document.getElementById('userId').value = user.id;
+        document.getElementById('userName').value = user.name || '';
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userPhone').value = user.phone || '';
+        document.getElementById('userRole').value = user.role || 'user';
+        document.getElementById('userPassword').value = '';
+        
+        userModal.style.display = 'flex';
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert('Ошибка загрузки данных пользователя: ' + error.message);
     }
+}
     
     // Подтверждение удаления пользователя
     window.confirmDeleteUser = function(userId, userName) {

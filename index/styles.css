@@ -49,6 +49,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .logo {
@@ -1071,6 +1072,302 @@ body {
   background: var(--color-bg);
   border-radius: 8px;
 }
+
+.profile-container {
+  max-width: 1200px;
+  margin: 100px auto 40px;
+  padding: 0 24px;
+}
+        
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+        
+.profile-title {
+  font-size: 32px;
+  color: var(--color-primary);
+  margin: 0;
+}
+        
+.profile-content {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 40px;
+}
+        
+@media (max-width: 768px) {
+  .profile-content {
+    grid-template-columns: 1fr;
+  }
+}
+        
+.user-info-card {
+  background: var(--color-white);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border: 1px solid var(--color-border);
+}
+        
+.avatar-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+        
+.avatar-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 15px;
+}
+        
+.avatar-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-accent);
+}
+        
+.avatar-placeholder {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 60px;
+  font-weight: bold;
+  border: 3px solid var(--color-accent);
+}
+        
+        .avatar-upload-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .avatar-upload-btn:hover {
+            background: var(--color-accent);
+            transform: scale(1.1);
+        }
+        
+        .user-details {
+            margin-top: 20px;
+        }
+        
+        .user-detail {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        
+        .user-detail:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            color: var(--color-text);
+            font-weight: 500;
+        }
+        
+        .logout-btn {
+            width: 100%;
+            margin-top: 20px;
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        
+.favorites-section {
+  background: var(--color-white);
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border: 1px solid var(--color-border);
+}
+        
+.favorites-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--color-border);
+}
+        
+.favorites-title {
+  font-size: 24px;
+  color: var(--color-primary);
+  margin: 0;
+}
+        
+.favorites-count {
+  background: var(--color-accent);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+        
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+        
+.favorite-card {
+  background: var(--color-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  transition: transform 0.3s;
+}
+        
+.favorite-card:hover {
+  transform: translateY(-5px);
+}
+        
+.favorite-card-image {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+        
+.favorite-card-content {
+  padding: 15px;
+}
+        
+.favorite-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: var(--color-primary);
+}
+        
+        .favorite-card-details {
+            font-size: 14px;
+            color: var(--color-text-light);
+            margin-bottom: 10px;
+        }
+        
+        .favorite-card-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 10px;
+        }
+        
+        .favorite-card-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .favorite-card-actions .btn {
+            flex: 1;
+            padding: 8px;
+            font-size: 14px;
+        }
+        
+        .btn-remove-favorite {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            color: white;
+        }
+        
+        .btn-remove-favorite:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        
+        /* Нет избранного */
+        .no-favorites {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--color-text-light);
+        }
+        
+        .no-favorites-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: var(--color-border);
+        }
+        
+        /* Сообщения */
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Загрузка */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: var(--color-text-light);
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 576px) {
+            .favorites-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
         
 @media (max-width: 768px) {
   .users-table {

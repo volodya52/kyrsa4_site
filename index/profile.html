@@ -4,11 +4,211 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
-    <title>Document</title>
+    <title>Профиль пользователя</title>
 </head>
 <body>
-    
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <span class="logo-text">АВТОСАЛОН</span>
+                </div>
+               <ul class="nav-menu" id="navMenu">
+    <li><a href="index.html">Главная</a></li>
+    <li><a href="cars.html">Автомобили</a></li>
+    <li><a href="uslugi.html">Услуги</a></li>
+    <li><a href="about.html">О нас</a></li>
+    <li><a href="contact.html">Контакты</a></li>
+    <li><a href="news.html">Новости</a></li>
+     <li id="usersTabItem" style="display: none;">
+        <a href="users.html">Пользователи</a>
+    </li>
+    <li><a href="#" id="signinLink">Войти</a></li>
+    <!-- Кнопка "Выйти" больше не добавляется сюда -->
+</ul>
+            </nav>
+        </div>
+    </header>
 
-    <script src=""></script>
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1 class="profile-title">Мой профиль</h1>
+            <button class="btn btn-primary" onclick="location.href='cars.html'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                </svg>
+                Найти автомобили
+            </button>
+        </div>
+
+        <div class="profile-content">
+            <div class="user-info-card">
+                <div class="avatar-section">
+                    <div class="avatar-container">
+                        <div class="avatar-placeholder" id="avatarPlaceholder">
+                        </div>
+                        <img src="" alt="Аватар" class="avatar-image" id="avatarImage" style="display: none;">
+                        <button class="avatar-upload-btn" id="avatarUploadBtn" title="Изменить аватар">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                            </svg>
+                        </button>
+                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
+                    </div>
+                    <h3 id="userNameDisplay"></h3>
+                </div>
+
+                <div class="user-details">
+                    <div class="user-detail">
+                        <div class="detail-label">Имя</div>
+                        <div class="detail-value" id="userNameDetail"></div>
+                    </div>
+                    <div class="user-detail">
+                        <div class="detail-label">Email</div>
+                        <div class="detail-value" id="userEmailDetail"></div>
+                    </div>
+                    <div class="user-detail">
+                        <div class="detail-label">Телефон</div>
+                        <div class="detail-value" id="userPhoneDetail"></div>
+                    </div>
+                </div>
+
+                <button class="btn logout-btn" id="logoutBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Выйти из профиля
+                </button>
+            </div>
+
+            <!-- Правая колонка - избранные автомобили -->
+            <div class="favorites-section">
+                <div class="favorites-header">
+                    <h2 class="favorites-title">Понравившиеся автомобили</h2>
+                    <span class="favorites-count" id="favoritesCount">0</span>
+                </div>
+
+                <div id="favoritesContent">
+                    <div class="loading">Загрузка избранных автомобилей...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна входа/регистрации -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Вход в систему</h2>
+                <button class="modal-close" id="closeLoginModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Введите ваш email" required>
+                    <div class="error-message" id="loginEmailError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="Введите ваш пароль" required>
+                    <div class="error-message" id="loginPasswordError"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelLoginBtn">Отмена</button>
+                <button class="btn btn-primary" id="confirmLoginBtn">Войти</button>
+            </div>
+            <div class="modal-footer-links">
+                <p>Нет аккаунта? <a href="#" id="showRegisterModalLink">Зарегистрироваться</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="registerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Регистрация</h2>
+                <button class="modal-close" id="closeRegisterModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="regName">Имя</label>
+                    <input type="text" id="regName" placeholder="Введите ваше имя" required>
+                    <div class="error-message" id="regNameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Телефон</label>
+                    <input type="tel" id="regPhone" placeholder="Введите номер телефона" required>
+                    <div class="error-message" id="regPhoneError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" placeholder="Введите ваш email" required>
+                    <div class="error-message" id="regEmailError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Пароль</label>
+                    <input type="password" id="regPassword" placeholder="Придумайте пароль" required>
+                    <div class="error-message" id="regPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Подтвердите пароль</label>
+                    <input type="password" id="regConfirmPassword" placeholder="Повторите пароль" required>
+                    <div class="error-message" id="regConfirmPasswordError"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRegisterBtn">Отмена</button>
+                <button class="btn btn-primary" id="confirmRegisterBtn">Зарегистрироваться</button>
+            </div>
+            <div class="modal-footer-links">
+                <p>Уже есть аккаунт? <a href="#" id="showLoginModalLink">Войти</a></p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 class="footer-title">АВТОСАЛОН</h4>
+                    <p class="footer-text">Ваш надежный партнер в мире автомобилей</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Навигация</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Главная</a></li>
+                        <li><a href="cars.html">Автомобили</a></li>
+                        <li><a href="uslugi.html">Услуги</a></li>
+                        <li><a href="about.html">О нас</a></li>
+                        <li><a href="contact.html">Контакты</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Контакты</h4>
+                    <ul class="footer-links">
+                        <li>+7 (912) 686-51-44</li>
+                        <li>primeravtosalona@gmail.com</li>
+                        <li>Екатеринбург, ул. Поканезнаю, 22</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Мы в соцсетях</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="VK">VK</a>
+                        <a href="#" aria-label="Instagram">Instagram</a>
+                        <a href="#" aria-label="Telegram">Telegram</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../view/SignInView.js"></script>
+    <script src="../view/ProfileView.js"></script>
+    <script src="../view/AdminUserView.js"></script>
 </body>
 </html>
