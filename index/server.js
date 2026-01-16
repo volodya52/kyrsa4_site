@@ -9,7 +9,8 @@ const PORT = 3000;
 // Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '.'))); // Для обслуживания статических файлов
+app.use(express.static(path.join(__dirname, '.'))); 
+app.use('/view', express.static(path.join(__dirname, '../view')));
 
 // Простое хранилище сессий (в памяти)
 const sessions = {};

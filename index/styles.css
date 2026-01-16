@@ -642,7 +642,7 @@ body {
   color: var(--color-white);
 }
 
-/* Обновленные стили для модальных окон (добавить в конец styles.css) */
+
 
 .modal-overlay {
     display: none;

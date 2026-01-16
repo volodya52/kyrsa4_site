@@ -14,6 +14,7 @@ class DatabaseCreate{
     Name TEXT NOT NULL,
     Email TEXT UNIQUE NOT NULL,
     Password TEXT NOT NULL,
+    Phone TEXT NOT NULL,
     Role_ID INTEGER DEFAULT 2,
     FOREIGN KEY (Role_ID) REFERENCES Roles (ID)
     )
@@ -80,16 +81,16 @@ class DatabaseCreate{
         )
     `;
 
-    // СОЗДАЙТЕ МАССИВ tables со всеми запросами
+   
     const tables = [
-        createRoleTable,     // Сначала создаем Roles, т.к. Users ссылается на Roles
+        createRoleTable,    
         createUsersTable,
         createCarsTable,
         createTradeInTable,
         createNewsTable
     ];
 
-    // Теперь tables определена и можно использовать forEach
+   
     tables.forEach((sql, index) => {
         this.db.run(sql, (err) => {
             if (err) {
