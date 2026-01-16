@@ -465,6 +465,256 @@ app.put('/api/admin/trade-ins/:id/status', requireAuth, requireAdmin, async (req
     }
 });
 
+app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const users = await db.getAllUsers();
+        
+        res.json({
+            success: true,
+            users: users.map(u => ({
+                id: u.ID,
+                name: u.Name,
+                email: u.Email,
+                phone: u.Phone || 'Не указан',
+                role: u.Role_Name || 'Клиент',
+                role_id: u.Role_ID,
+                created_at: u.Created_At || new Date().toISOString()
+            }))
+        });
+    } catch (error) {
+        console.error('Ошибка получения пользователей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Получить пользователя по ID
+app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const user = await db.findUserById(parseInt(req.params.id));
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+        
+       res.json({
+        success: true,
+        user: {
+            id: user.ID,
+            name: user.Name,
+            email: user.Email,
+            phone: user.Phone || '',
+            role: user.Role_Name || 'Клиент',
+            role_id: user.Role_ID
+        // Убрали: created_at: user.Created_At || new Date().toISOString()
+    }
+});
+    } catch (error) {
+        console.error('Ошибка получения пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Создать нового пользователя
+app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { name, email, password, phone, role_id = 2 } = req.body;
+
+        // Валидация
+        if (!name || !email || !password) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Имя, email и пароль обязательны' 
+            });
+        }
+
+        // Проверка существования пользователя
+        const existingUser = await db.findUserByEmail(email);
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Пользователь с таким email уже существует' 
+            });
+        }
+
+        // Создание пользователя
+        const result = await db.addUser(name, email, password, phone, role_id);
+        
+        if (!result.success) {
+            return res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+        // Получаем созданного пользователя
+        const user = await db.findUserById(result.id);
+        
+        res.json({
+        success: true,
+        user: {
+            id: user.ID,
+            name: user.Name,
+            email: user.Email,
+            phone: user.Phone || '',
+            role: user.Role_Name || 'Клиент',
+            role_id: user.Role_ID
+        // Убрали: created_at: user.Created_At || new Date().toISOString()
+    }
+});
+
+    } catch (error) {
+        console.error('Ошибка создания пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Обновить пользователя
+app.put('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { name, email, phone, password, role_id } = req.body;
+
+        // Проверяем существование пользователя
+        const existingUser = await db.findUserById(userId);
+        if (!existingUser) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+
+        // Проверяем email на уникальность, если он изменился
+        if (email && email !== existingUser.Email) {
+            const userWithEmail = await db.findUserByEmail(email);
+            if (userWithEmail && userWithEmail.ID !== userId) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Пользователь с таким email уже существует' 
+                });
+            }
+        }
+
+        // Обновляем пользователя
+        const result = await db.updateUser(userId, {
+            name: name || existingUser.Name,
+            email: email || existingUser.Email,
+            phone: phone !== undefined ? phone : existingUser.Phone,
+            password: password || null,
+            role_id: role_id || existingUser.Role_ID
+        });
+
+        if (!result.success) {
+            return res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+        // Получаем обновленного пользователя
+        const updatedUser = await db.findUserById(userId);
+        
+        res.json({
+        success: true,
+        user: {
+            id: user.ID,
+            name: user.Name,
+            email: user.Email,
+            phone: user.Phone || '',
+            role: user.Role_Name || 'Клиент',
+            role_id: user.Role_ID
+        // Убрали: created_at: user.Created_At || new Date().toISOString()
+    }
+});
+
+    } catch (error) {
+        console.error('Ошибка обновления пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Удалить пользователя
+app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const currentUser = req.user;
+
+        // Нельзя удалить самого себя
+        if (userId === currentUser.ID) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Нельзя удалить самого себя' 
+            });
+        }
+
+        // Проверяем существование пользователя
+        const existingUser = await db.findUserById(userId);
+        if (!existingUser) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+
+        // Удаляем пользователя
+        const result = await db.deleteUser(userId);
+        
+        if (!result.success) {
+            return res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Пользователь успешно удален'
+        });
+
+    } catch (error) {
+        console.error('Ошибка удаления пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Получить все роли
+app.get('/api/admin/roles', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const roles = await db.getAllRoles();
+        
+        res.json({
+            success: true,
+            roles: roles.map(r => ({
+                id: r.ID,
+                name: r.Name
+            }))
+        });
+    } catch (error) {
+        console.error('Ошибка получения ролей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));

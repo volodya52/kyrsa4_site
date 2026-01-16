@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями</title>
     <link rel="stylesheet" href="styles.css">
-    <title>О нас</title>
 </head>
 <body>
     <header class="header">
@@ -13,60 +13,100 @@
                 <div class="logo">
                     <span class="logo-text">АВТОСАЛОН</span>
                 </div>
-                
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="index.html">Главная</a></li>
                     <li><a href="cars.html">Автомобили</a></li>
                     <li><a href="uslugi.html">Услуги</a></li>
                     <li><a href="about.html">О нас</a></li>
                     <li><a href="contact.html">Контакты</a></li>
-                    <li><a href="news.html">Новости</a></li>
+                    <li><a href="users.html">Пользователи</a></li>
                     <li><a href="users.html" style="display: none;" id="adminUsersLink">Пользователи</a></li>
                     <li><a href="#" id="signinLink">Войти</a></li>
-
                 </ul>
             </nav>
         </div>
     </header>
 
-    <section class="about" id="about">
-        <div class="container">
-            <div class="about-content">
-                <div class="about-text">
-                    <h2 class="section-title">О компании</h2>
-                    <p class="about-description">Мы работаем на рынке продажи премиум автомобилей более 15 лет. За это время мы помогли тысячам клиентов найти автомобиль их мечты.</p>
-                    <p class="about-description">Наша миссия — сделать покупку автомобиля максимально комфортной, прозрачной и выгодной для каждого клиента.</p>
-                    <div class="about-features">
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Проверенные автомобили</span>
-                        </div>
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Прозрачная история</span>
-                        </div>
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Честные цены</span>
-                        </div>
-                        <div class="feature-item">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <span>Гарантия качества</span>
-                        </div>
-                    </div>
-                </div>
+    <div class="admin-container" id="adminContent">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление пользователями</h1>
+            <div class="admin-actions">
+                <button class="btn btn-primary" id="addUserBtn">Добавить пользователя</button>
+                <button class="btn btn-secondary" onclick="location.reload()">Обновить</button>
             </div>
         </div>
-    </section>
 
+        <div id="usersTableContainer">
+            <div class="loading">Загрузка пользователей...</div>
+        </div>
+    </div>
+
+    <div class="access-denied" id="accessDenied" style="display: none;">
+        <h2>Доступ запрещен</h2>
+        <p>Эта страница доступна только администраторам.</p>
+        <a href="index.html" class="btn btn-primary">На главную</a>
+    </div>
+
+    <!-- Модальное окно добавления/редактирования пользователя -->
+    <div class="modal-overlay modal-user-form" id="userModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="userModalTitle">Добавить пользователя</h2>
+                <button class="modal-close" id="closeUserModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    <div class="form-group">
+                        <label for="userName">Имя *</label>
+                        <input type="text" id="userName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userEmail">Email *</label>
+                        <input type="email" id="userEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userPhone">Телефон</label>
+                        <input type="tel" id="userPhone">
+                    </div>
+                    <div class="form-group">
+                        <label for="userPassword">Пароль <span id="passwordHint">(оставьте пустым, чтобы не менять)</span></label>
+                        <input type="password" id="userPassword">
+                    </div>
+                    <div class="form-group">
+                        <label for="userRole">Роль *</label>
+                        <select id="userRole" required>
+                            <option value="user">Пользователь</option>
+                            <option value="admin">Администратор</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelUserBtn">Отмена</button>
+                <button class="btn btn-primary" id="saveUserBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно удаления пользователя -->
+    <div class="modal-overlay" id="deleteModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Удаление пользователя</h2>
+                <button class="modal-close" id="closeDeleteModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage">Вы действительно хотите удалить этого пользователя?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelDeleteBtn">Отмена</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна входа/регистрации (из SignInView.js) -->
     <div class="modal-overlay" id="loginModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -108,6 +148,11 @@
                     <div class="error-message" id="regNameError"></div>
                 </div>
                 <div class="form-group">
+                    <label for="regPhone">Телефон</label>
+                    <input type="tel" id="regPhone" placeholder="Введите номер телефона" required>
+                    <div class="error-message" id="regPhoneError"></div>
+                </div>
+                <div class="form-group">
                     <label for="regEmail">Email</label>
                     <input type="email" id="regEmail" placeholder="Введите ваш email" required>
                     <div class="error-message" id="regEmailError"></div>
@@ -133,7 +178,7 @@
         </div>
     </div>
 
-     <footer class="footer">
+    <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
@@ -148,7 +193,6 @@
                         <li><a href="uslugi.html">Услуги</a></li>
                         <li><a href="about.html">О нас</a></li>
                         <li><a href="contact.html">Контакты</a></li>
-                        <li><a href="#">Войти</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -168,9 +212,10 @@
                     </div>
                 </div>
             </div>
-            
         </div>
     </footer>
+
     <script src="../view/SignInView.js"></script>
+    <script src="../view/AdminUserView.js"></script>
 </body>
 </html>

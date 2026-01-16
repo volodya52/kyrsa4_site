@@ -1,108 +1,101 @@
-const Database=require('sqlite3');
+const Database = require('sqlite3');
 
-class DatabaseCreate{
-    constructor(){
-        this.db=new Database.Database('autosalon.db');
+class DatabaseCreate {
+    constructor() {
+        this.db = new Database.Database('autosalon.db');
         this.initDatabase();
     }
 
     initDatabase() {
+        const createRolesTable = `
+            CREATE TABLE IF NOT EXISTS Roles (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL
+            )
+        `;
 
-    const createUsersTable = `
-    CREATE TABLE IF NOT EXISTS Users(
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    Name TEXT NOT NULL,
-    Email TEXT UNIQUE NOT NULL,
-    Password TEXT NOT NULL,
-    Phone TEXT NOT NULL,
-    Role_ID INTEGER DEFAULT 2,
-    FOREIGN KEY (Role_ID) REFERENCES Roles (ID)
-    )
-    `;
+        const createUsersTable = `
+            CREATE TABLE IF NOT EXISTS Users (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Name TEXT NOT NULL,
+                Email TEXT UNIQUE NOT NULL,
+                Password TEXT NOT NULL,
+                Phone TEXT,
+                Role_ID INTEGER DEFAULT 2,
+                FOREIGN KEY (Role_ID) REFERENCES Roles (ID)
+            )
+        `;
 
-    const createCarsTable = `
-    CREATE TABLE IF NOT EXISTS Cars
-    (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,  
-    Brand TEXT NOT NULL,
-    Model TEXT NOT NULL,
-    Year INTEGER NOT NULL,
-    Price INTEGER NOT NULL,
-    Mileage INTEGER NOT NULL DEFAULT 0,
-    EngineSize REAL NOT NULL,
-    Horsepower INTEGER NOT NULL,
-    Transmission TEXT NOT NULL,
-    Fuel TEXT NOT NULL,
-    Body TEXT NOT NULL,
-    Color TEXT NOT NULL,
-    Description TEXT NOT NULL,
-    Status TEXT DEFAULT 'В наличии',
-    Image_url TEXT
-    )
-    `;
+        const createCarsTable = `
+            CREATE TABLE IF NOT EXISTS Cars (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Brand TEXT NOT NULL,
+                Model TEXT NOT NULL,
+                Year INTEGER NOT NULL,
+                Price INTEGER NOT NULL,
+                Mileage INTEGER NOT NULL DEFAULT 0,
+                EngineSize REAL NOT NULL,
+                Horsepower INTEGER NOT NULL,
+                Transmission TEXT NOT NULL,
+                Fuel TEXT NOT NULL,
+                Body TEXT NOT NULL,
+                Color TEXT NOT NULL,
+                Description TEXT,
+                Status TEXT DEFAULT 'В наличии',
+                Image_url TEXT
+            )
+        `;
 
-    const createRoleTable = `
-        CREATE TABLE IF NOT EXISTS Roles
-        (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,  
-            Name TEXT NOT NULL
-        )
-    `;
+        const createTradeInTable = `
+            CREATE TABLE IF NOT EXISTS TradeIn (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                User_ID INTEGER NOT NULL,
+                Car_ID INTEGER,
+                Brand TEXT NOT NULL,
+                Model TEXT NOT NULL,
+                Year INTEGER NOT NULL,
+                Mileage INTEGER NOT NULL,
+                Estimated_price INTEGER,
+                Condition TEXT NOT NULL,
+                Phone TEXT NOT NULL,
+                Status TEXT DEFAULT 'В ожидании',
+                FOREIGN KEY (User_ID) REFERENCES Users (ID) ON DELETE CASCADE,
+                FOREIGN KEY (Car_ID) REFERENCES Cars(ID) ON DELETE SET NULL
+            )
+        `;
 
-    const createTradeInTable = `
-        CREATE TABLE IF NOT EXISTS TradeIn
-        (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT,  
-            User_ID INTEGER NOT NULL,
-            Car_ID INTEGER,
-            Brand TEXT NOT NULL,
-            Model TEXT NOT NULL,
-            Year INTEGER NOT NULL,
-            Mileage INTEGER NOT NULL,
-            Estimated_price INTEGER,
-            Condition TEXT NOT NULL,
-            Phone TEXT NOT NULL,
-            Status TEXT DEFAULT 'В ожидании',
-            FOREIGN KEY (User_ID) REFERENCES Users (ID) ON DELETE CASCADE,
-            FOREIGN KEY (Car_ID) REFERENCES Cars(ID) ON DELETE SET NULL 
-        )
-    `;
+        const createNewsTable = `
+            CREATE TABLE IF NOT EXISTS News (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                Title TEXT NOT NULL,
+                Description TEXT NOT NULL,
+                Type TEXT NOT NULL,
+                User_ID INTEGER,
+                Car_ID INTEGER,
+                Image_url TEXT
+            )
+        `;
 
-    const createNewsTable = `
-        CREATE TABLE IF NOT EXISTS News
-        (
-            ID INTEGER PRIMARY KEY AUTOINCREMENT, 
-            Title TEXT NOT NULL,
-            Description TEXT NOT NULL,
-            Type TEXT NOT NULL,
-            User_ID INTEGER,
-            Car_ID INTEGER,
-            Image_url TEXT
-        )
-    `;
+        const tables = [
+            createRolesTable,
+            createUsersTable,
+            createCarsTable,
+            createTradeInTable,
+            createNewsTable
+        ];
 
-   
-    const tables = [
-        createRoleTable,    
-        createUsersTable,
-        createCarsTable,
-        createTradeInTable,
-        createNewsTable
-    ];
-
-   
-    tables.forEach((sql, index) => {
-        this.db.run(sql, (err) => {
-            if (err) {
-                console.error(`Ошибка при создании таблицы ${index + 1}:`, err.message);
-            }
+        tables.forEach((sql, index) => {
+            this.db.run(sql, (err) => {
+                if (err) {
+                    console.error(`Ошибка при создании таблицы ${index + 1}:`, err.message);
+                }
+            });
         });
-    });
 
-    this.addRoles();
-    this.addAdminUser();
-    console.log('База данных инициализирована');
-}
+        this.addRoles();
+        this.addAdminUser();
+        console.log('База данных инициализирована');
+    }
 
     addRoles() {
         const roles = [
@@ -112,43 +105,42 @@ class DatabaseCreate{
 
         roles.forEach(role => {
             this.db.run(
-                'INSERT OR IGNORE INTO Roles (Name) VALUES (?)', 
+                'INSERT OR IGNORE INTO Roles (Name) VALUES (?)',
                 [role.name],
-                    (err) => {
-                        if (err) {
-                    console.error(`Ошибка при добавлении роли ${role.name}:`, err.message);
+                (err) => {
+                    if (err) {
+                        console.error(`Ошибка при добавлении роли ${role.name}:`, err.message);
                     }
-                }   
+                }
             );
         });
     }
 
-    addAdminUser(){
+    addAdminUser() {
         this.db.get(
-            'SELECT COUNT(*) as count FROM Users WHERE Email=?',
+            'SELECT COUNT(*) as count FROM Users WHERE Email = ?',
             ['admin@autosalon.ru'],
-            (err,row)=>{
-                if(err){
-                    console.error('Ошибка при проверке админа', err.message);
+            (err, row) => {
+                if (err) {
+                    console.error('Ошибка при проверке админа:', err.message);
                     return;
                 }
 
-                if(row==0){
+                if (row.count === 0) {
                     this.db.run(
                         `INSERT INTO Users (Name, Email, Password, Phone, Role_ID) VALUES (?, ?, ?, ?, ?)`,
-                       ['Администратор', 'admin@autosalon.ru', 'admin123', '79126865144', 1],
-
-                        (err)=>{
-                            if(err){
-                                console.error('Ошибка при создании администратора: ', err.message);
-                            }else{
+                        ['Администратор', 'admin@autosalon.ru', 'admin123', '79126865144', 1],
+                        (err) => {
+                            if (err) {
+                                console.error('Ошибка при создании администратора:', err.message);
+                            } else {
                                 console.log('Администратор создан: admin@autosalon.ru/admin123');
                             }
                         }
-                    )
+                    );
                 }
             }
-        )
+        );
     }
 
     addUser(name, email, password, phone = null, roleId = 2) {
@@ -209,7 +201,96 @@ class DatabaseCreate{
         });
     }
 
-    // === МЕТОДЫ ДЛЯ РАБОТЫ С АВТОМОБИЛЯМИ ===
+    getAllUsers() {
+        return new Promise((resolve, reject) => {
+            this.db.all(
+                `SELECT u.*, r.Name as Role_Name 
+                 FROM Users u 
+                 LEFT JOIN Roles r ON u.Role_ID = r.ID 
+                 ORDER BY u.ID`,
+                (err, rows) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(rows || []);
+                    }
+                }
+            );
+        });
+    }
+
+    updateUser(id, userData) {
+        return new Promise((resolve, reject) => {
+            const fields = [];
+            const values = [];
+            
+            if (userData.name) {
+                fields.push('Name = ?');
+                values.push(userData.name);
+            }
+            
+            if (userData.email) {
+                fields.push('Email = ?');
+                values.push(userData.email);
+            }
+            
+            if (userData.phone !== undefined) {
+                fields.push('Phone = ?');
+                values.push(userData.phone);
+            }
+            
+            if (userData.password) {
+                fields.push('Password = ?');
+                values.push(userData.password);
+            }
+            
+            if (userData.role_id) {
+                fields.push('Role_ID = ?');
+                values.push(userData.role_id);
+            }
+            
+            values.push(id);
+            
+            if (fields.length === 0) {
+                resolve({ success: true, changes: 0 });
+                return;
+            }
+            
+            const query = `UPDATE Users SET ${fields.join(', ')} WHERE ID = ?`;
+            
+            this.db.run(query, values, function(err) {
+                if (err) {
+                    reject({ success: false, error: err.message });
+                } else {
+                    resolve({ success: true, changes: this.changes });
+                }
+            });
+        });
+    }
+
+    deleteUser(id) {
+        return new Promise((resolve, reject) => {
+            this.db.run('DELETE FROM Users WHERE ID = ?', [id], function(err) {
+                if (err) {
+                    reject({ success: false, error: err.message });
+                } else {
+                    resolve({ success: true, changes: this.changes });
+                }
+            });
+        });
+    }
+
+    getAllRoles() {
+        return new Promise((resolve, reject) => {
+            this.db.all('SELECT * FROM Roles ORDER BY ID', (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows || []);
+                }
+            });
+        });
+    }
 
     addCar(carData) {
         return new Promise((resolve, reject) => {
@@ -239,7 +320,7 @@ class DatabaseCreate{
     getAllCars() {
         return new Promise((resolve, reject) => {
             this.db.all(
-                'SELECT * FROM Cars WHERE Status != "Продан" ORDER BY Created_At DESC',
+                'SELECT * FROM Cars WHERE Status != "Продан" ORDER BY ID DESC',
                 (err, rows) => {
                     if (err) {
                         reject(err);
@@ -303,7 +384,7 @@ class DatabaseCreate{
                 params.push(filters.body);
             }
 
-            query += ' AND Status = "В наличии" ORDER BY Created_At DESC';
+            query += ' AND Status = "В наличии" ORDER BY ID DESC';
 
             this.db.all(query, params, (err, rows) => {
                 if (err) {
@@ -314,8 +395,6 @@ class DatabaseCreate{
             });
         });
     }
-
-    // === МЕТОДЫ ДЛЯ TRADE-IN ===
 
     createTradeIn(tradeInData) {
         return new Promise((resolve, reject) => {
@@ -348,7 +427,7 @@ class DatabaseCreate{
                  FROM TradeIn t
                  LEFT JOIN Cars c ON t.Car_ID = c.ID
                  WHERE t.User_ID = ?
-                 ORDER BY t.Created_At DESC`,
+                 ORDER BY t.ID DESC`,
                 [userId],
                 (err, rows) => {
                     if (err) {
@@ -369,7 +448,7 @@ class DatabaseCreate{
                  FROM TradeIn t
                  LEFT JOIN Users u ON t.User_ID = u.ID
                  LEFT JOIN Cars c ON t.Car_ID = c.ID
-                 ORDER BY t.Created_At DESC`,
+                 ORDER BY t.ID DESC`,
                 (err, rows) => {
                     if (err) {
                         reject(err);
@@ -396,8 +475,6 @@ class DatabaseCreate{
             );
         });
     }
-
-    // === МЕТОДЫ ДЛЯ НОВОСТЕЙ ===
 
     addNews(newsData) {
         return new Promise((resolve, reject) => {
@@ -427,7 +504,7 @@ class DatabaseCreate{
                  FROM News n
                  LEFT JOIN Users u ON n.User_ID = u.ID
                  LEFT JOIN Cars c ON n.Car_ID = c.ID
-                 ORDER BY n.Created_At DESC`,
+                 ORDER BY n.ID DESC`,
                 (err, rows) => {
                     if (err) {
                         reject(err);
@@ -446,7 +523,7 @@ class DatabaseCreate{
                  FROM News n
                  LEFT JOIN Users u ON n.User_ID = u.ID
                  WHERE n.Type = ?
-                 ORDER BY n.Created_At DESC`,
+                 ORDER BY n.ID DESC`,
                 [type],
                 (err, rows) => {
                     if (err) {
@@ -458,8 +535,6 @@ class DatabaseCreate{
             );
         });
     }
-
-    // === ОБЩИЕ МЕТОДЫ ===
 
     execute(sql, params = []) {
         return new Promise((resolve, reject) => {
@@ -484,6 +559,7 @@ class DatabaseCreate{
             });
         });
     }
+
     getOne(sql, params = []) {
         return new Promise((resolve, reject) => {
             this.db.get(sql, params, (err, row) => {
@@ -495,10 +571,10 @@ class DatabaseCreate{
             });
         });
     }
+
     close() {
         this.db.close();
     }
 }
 
-module.exports=new DatabaseCreate();
-
+module.exports = new DatabaseCreate();

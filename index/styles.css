@@ -922,6 +922,171 @@ body {
   }
 }
 
+.admin-container {
+  max-width: 1200px;
+  margin: 80px auto 40px;
+  padding: 0 24px;
+}
+        
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+        
+.admin-title {
+  font-size: 32px;
+  color: var(--color-primary);
+  margin: 0;
+}
+        
+.admin-actions {
+  display: flex;
+  gap: 10px;
+}
+        
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 30px;
+  background: var(--color-white);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+        
+.users-table th {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding: 15px;
+  text-align: left;
+  font-weight: 600;
+}
+        
+.users-table td {
+  padding: 15px;
+  border-bottom: 1px solid var(--color-border);
+}
+        
+.users-table tr:hover {
+   background-color: rgba(0,0,0,0.02);
+}
+        
+.user-actions {
+  display: flex;
+  gap: 8px;
+}
+        
+.btn-icon {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+        
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+        
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+        
+.btn-warning {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+        
+.btn-warning:hover {
+  background-color: #e0a800;
+  border-color: #d39e00;
+}
+        
+.role-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+        
+.role-admin {
+  background-color: #dc3545;
+  color: white;
+}
+        
+.role-user {
+  background-color: #28a745;
+  color: white;
+}
+        
+.access-denied {
+  text-align: center;
+  padding: 100px 20px;
+}
+        
+.access-denied h2 {
+  color: #dc3545;
+  margin-bottom: 20px;
+}
+        
+.modal-user-form .modal-content {
+  max-width: 500px;
+}
+        
+.modal-user-form .form-group {
+  margin-bottom: 20px;
+}
+        
+.modal-user-form label {
+  display: block;
+  margin-bottom: 5px;
+   font-weight: 600;
+}
+        
+.modal-user-form input,
+.modal-user-form select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 14px;
+}
+        
+.loading {
+  text-align: center;
+  padding: 50px;
+  color: var(--color-text-light);
+}
+        
+.no-data {
+  text-align: center;
+  padding: 50px;
+  color: var(--color-text-light);
+  background: var(--color-bg);
+  border-radius: 8px;
+}
+        
+@media (max-width: 768px) {
+  .users-table {
+    display: block;
+    overflow-x: auto;
+  }
+            
+  .admin-actions {
+    flex-direction: column;
+  }
+            
+  .user-actions {
+    flex-direction: column;
+  }
+}
+
 @keyframes slideIn {
     from {
         transform: translateX(100%);

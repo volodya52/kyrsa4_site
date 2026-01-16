@@ -216,11 +216,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Сохраняем в localStorage
                 localStorage.setItem('auth_token', data.token);
                 localStorage.setItem('user_data', JSON.stringify(data.user));
+            
+            // Проверяем роль пользователя и показываем/скрываем ссылку на страницу пользователей
+                updateNavigationForRole(data.user.role);
+            
                 return data;
             } else {
                 throw new Error(data.error);
             }
-        });
+            });
     }
 
     async function registerUser(name, phone, email, password) {
@@ -253,6 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (token && userData) {
             const user = JSON.parse(userData);
             updateUIForLoggedInUser(user);
+            updateNavigationForRole(user.role);
         
         // Проверяем валидность токена на сервере
             fetch('/api/user', {
@@ -276,6 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
             signinLink.textContent = user.name;
             signinLink.href = '#';
             signinLink.onclick = showUserMenu;
+            updateNavigationForRole(user.role);
         
             let logoutLink = document.getElementById('logoutLink');
             if (!logoutLink) {
@@ -284,6 +290,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 navItem.parentNode.insertBefore(logoutItem, navItem.nextSibling);
                 logoutLink = document.getElementById('logoutLink');
                 logoutLink.addEventListener('click', logoutUser);
+            }
+        }
+    }
+
+    function updateNavigationForRole(role) {
+        const navMenu = document.querySelector('.nav-menu');
+        const usersLink = document.querySelector('#navMenu a[href="users.html"]');
+    
+        if (role === 'admin') {
+        
+            if (!usersLink) {
+                const usersItem = document.createElement('li');
+                usersItem.innerHTML = '<a href="users.html">Пользователи</a>';
+            
+            
+                const signinItem = document.querySelector('#navMenu li:has(#signinLink)');
+                if (signinItem) {
+                    signinItem.parentNode.insertBefore(usersItem, signinItem);
+                }
+            }
+        } else {
+        // Если пользователь не админ - удаляем ссылку "Пользователи"
+            if (usersLink && usersLink.closest('li')) {
+                usersLink.closest('li').remove();
             }
         }
     }
