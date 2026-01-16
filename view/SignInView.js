@@ -521,8 +521,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function updateAllUserLinks(role) {
     const isAdmin = role === 'Администратор';
-    
-    // Все возможные селекторы для ссылки "Пользователи"
     const selectors = [
         '#usersTabItem',
         '#adminUsersLink',
