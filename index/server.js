@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const db = require('../database.js'); // Импортируем нашу базу данных
 
 const app = express();
-const PORT = 3000;
+const PORT = 5000;
 
 // Middleware
 app.use(bodyParser.json());
@@ -567,7 +567,7 @@ app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
             phone: user.Phone || '',
             role: user.Role_Name || 'Клиент',
             role_id: user.Role_ID
-        // Убрали: created_at: user.Created_At || new Date().toISOString()
+        
     }
 });
 
@@ -809,6 +809,193 @@ app.get('/api/admin/roles', requireAuth, requireAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('Ошибка получения ролей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.get('/api/admin/cars', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const cars = await db.getAllCars();
+        
+        res.json({
+            success: true,
+            cars: cars.map(car => ({
+                id: car.ID,
+                brand: car.Brand,
+                model: car.Model,
+                year: car.Year,
+                price: car.Price,
+                mileage: car.Mileage,
+                engineSize: car.EngineSize,
+                horsepower: car.Horsepower,
+                transmission: car.Transmission,
+                fuel: car.Fuel,
+                body: car.Body,
+                color: car.Color,
+                description: car.Description,
+                status: car.Status,
+                image_url: car.Image_url || 'https://via.placeholder.com/300x200?text=Автомобиль',
+            }))
+        });
+    } catch (error) {
+        console.error('Ошибка получения автомобилей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Создать новый автомобиль
+app.post('/api/admin/cars', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const {
+            brand, model, year, price, mileage, engineSize,
+            horsepower, transmission, fuel, body, color,
+            description, status, image_url
+        } = req.body;
+
+        // Валидация
+        if (!brand || !model || !year || !price) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Заполните обязательные поля' 
+            });
+        }
+
+        const carData = {
+            brand,
+            model,
+            year: parseInt(year),
+            price: parseFloat(price),
+            mileage: mileage ? parseInt(mileage) : 0,
+            engineSize: engineSize || null,
+            horsepower: horsepower ? parseInt(horsepower) : null,
+            transmission: transmission || 'Автомат',
+            fuel: fuel || 'Бензин',
+            body: body || 'Седан',
+            color: color || 'Черный',
+            description: description || '',
+            status: status || 'new',
+            image_url: image_url || ''
+        };
+
+        const result = await db.createCar(carData);
+
+        if (result.success) {
+            res.status(201).json({
+                success: true,
+                message: 'Автомобиль успешно добавлен',
+                carId: result.id
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка создания автомобиля:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Обновить автомобиль
+app.put('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const carId = parseInt(req.params.id);
+        const {
+            brand, model, year, price, mileage, engineSize,
+            horsepower, transmission, fuel, body, color,
+            description, status, image_url
+        } = req.body;
+
+        // Проверяем существование автомобиля
+        const existingCar = await db.getCarById(carId);
+        if (!existingCar) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Автомобиль не найден' 
+            });
+        }
+
+        const carData = {
+            brand: brand || existingCar.Brand,
+            model: model || existingCar.Model,
+            year: year ? parseInt(year) : existingCar.Year,
+            price: price ? parseFloat(price) : existingCar.Price,
+            mileage: mileage !== undefined ? parseInt(mileage) : existingCar.Mileage,
+            engineSize: engineSize || existingCar.EngineSize,
+            horsepower: horsepower ? parseInt(horsepower) : existingCar.Horsepower,
+            transmission: transmission || existingCar.Transmission,
+            fuel: fuel || existingCar.Fuel,
+            body: body || existingCar.Body,
+            color: color || existingCar.Color,
+            description: description || existingCar.Description,
+            status: status || existingCar.Status,
+            image_url: image_url || existingCar.Image_url
+        };
+
+        const result = await db.updateCar(carId, carData);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Автомобиль успешно обновлен'
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка обновления автомобиля:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Удалить автомобиль
+app.delete('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const carId = parseInt(req.params.id);
+
+        // Проверяем существование автомобиля
+        const existingCar = await db.getCarById(carId);
+        if (!existingCar) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Автомобиль не найден' 
+            });
+        }
+
+        const result = await db.deleteCar(carId);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Автомобиль успешно удален'
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка удаления автомобиля:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 

@@ -58,6 +58,8 @@ class DatabaseCreate {
             )
         `;
 
+        
+
         const createTradeInTable = `
             CREATE TABLE IF NOT EXISTS TradeIn (
                 ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -331,19 +333,14 @@ class DatabaseCreate {
     }
 
     getAllCars() {
-        return new Promise((resolve, reject) => {
-            this.db.all(
-                'SELECT * FROM Cars WHERE Status != "Продан" ORDER BY ID DESC',
-                (err, rows) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(rows || []);
-                    }
-                }
-            );
-        });
+    try {
+        const [rows] = db.execute('SELECT * FROM Cars ORDER BY ID DESC');
+        return rows;
+    } catch (error) {
+        console.error('Ошибка получения автомобилей:', error);
+        throw error;
     }
+}
 
     getCarById(id) {
         return new Promise((resolve, reject) => {
@@ -356,6 +353,54 @@ class DatabaseCreate {
             });
         });
     }
+
+    createCar(carData) {
+    try {
+        const [result] = db.execute(
+            'INSERT INTO Cars (Brand, Model, Year, Price, Mileage, EngineSize, Horsepower, Transmission, Fuel, Body, Color, Description, Status, Image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                carData.brand, carData.model, carData.year, carData.price,
+                carData.mileage || 0, carData.engineSize, carData.horsepower,
+                carData.transmission, carData.fuel, carData.body,
+                carData.color, carData.description, carData.status,
+                carData.image_url || ''
+            ]
+        );
+        return { success: true, id: result.insertId };
+    } catch (error) {
+        console.error('Ошибка создания автомобиля:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+    updateCar(carId, carData) {
+    try {
+        db.execute(
+            'UPDATE Cars SET Brand = ?, Model = ?, Year = ?, Price = ?, Mileage = ?, EngineSize = ?, Horsepower = ?, Transmission = ?, Fuel = ?, Body = ?, Color = ?, Description = ?, Status = ?, Image_url = ? WHERE ID = ?',
+            [
+                carData.brand, carData.model, carData.year, carData.price,
+                carData.mileage, carData.engineSize, carData.horsepower,
+                carData.transmission, carData.fuel, carData.body,
+                carData.color, carData.description, carData.status,
+                carData.image_url, carId
+            ]
+        );
+        return { success: true };
+    } catch (error) {
+        console.error('Ошибка обновления автомобиля:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+    deleteCar(carId) {
+    try {
+        db.execute('DELETE FROM Cars WHERE ID = ?', [carId]);
+        return { success: true };
+    } catch (error) {
+        console.error('Ошибка удаления автомобиля:', error);
+        return { success: false, error: error.message };
+    }
+}
 
     searchCars(filters) {
         return new Promise((resolve, reject) => {

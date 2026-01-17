@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Управление пользователями</title>
+    <title>Управление автомобилями</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -20,11 +20,11 @@
                     <li><a href="about.html">О нас</a></li>
                     <li><a href="contact.html">Контакты</a></li>
                     <li><a href="news.html">Новости</a></li>
-                    <li id="carsTabItem" style="display: none;">
-                        <a href="carsCRUD.html">Управление авто</a>
-                    </li>
                     <li id="usersTabItem" style="display: none;">
                         <a href="users.html">Пользователи</a>
+                    </li>
+                    <li id="carsTabItem" style="display: none;">
+                        <a href="carsCRUD.html">Управление авто</a>
                     </li>
                     <li><a href="#" id="signinLink">Войти</a></li>
                 </ul>
@@ -34,15 +34,15 @@
 
     <div class="admin-container" id="adminContent">
         <div class="admin-header">
-            <h1 class="admin-title">Управление пользователями</h1>
+            <h1 class="admin-title">Управление автомобилями</h1>
             <div class="admin-actions">
-                <button class="btn btn-primary" id="addUserBtn">Добавить пользователя</button>
-                <button class="btn btn-secondary" onclick="location.reload()">Обновить</button>
+                <button class="btn btn-primary" id="addCarBtn">Добавить автомобиль</button>
+                <button class="btn btn-secondary" onclick="location.href='cars.html'">Вернуться в каталог</button>
             </div>
         </div>
 
-        <div id="usersTableContainer">
-            <div class="loading">Загрузка пользователей...</div>
+        <div id="carsTableContainer">
+            <div class="loading">Загрузка автомобилей...</div>
         </div>
     </div>
 
@@ -52,66 +52,139 @@
         <a href="index.html" class="btn btn-primary">На главную</a>
     </div>
 
-    <!-- Модальное окно добавления/редактирования пользователя -->
-    <div class="modal-overlay modal-user-form" id="userModal" style="display: none;">
+    <!-- Модальное окно добавления/редактирования автомобиля -->
+    <div class="modal-overlay modal-user-form" id="carModal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="userModalTitle">Добавить пользователя</h2>
-                <button class="modal-close" id="closeUserModal">&times;</button>
+                <h2 id="carModalTitle">Добавить автомобиль</h2>
+                <button class="modal-close" id="closeCarModal">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="userForm">
-                    <input type="hidden" id="userId">
-                    <div class="form-group">
-                        <label for="userName">Имя *</label>
-                        <input type="text" id="userName" required>
+                <form id="carForm">
+                    <input type="hidden" id="carId">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carBrand">Марка *</label>
+                            <input type="text" id="carBrand" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="carModel">Модель *</label>
+                            <input type="text" id="carModel" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="userEmail">Email *</label>
-                        <input type="email" id="userEmail" required>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carYear">Год выпуска *</label>
+                            <input type="number" id="carYear" min="2000" max="2025" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="carPrice">Цена (₽) *</label>
+                            <input type="number" id="carPrice" min="0" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="userPhone">Телефон</label>
-                        <input type="tel" id="userPhone">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carMileage">Пробег (км)</label>
+                            <input type="number" id="carMileage" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="carStatus">Статус</label>
+                            <select id="carStatus">
+                                <option value="new">Новый</option>
+                                <option value="used">С пробегом</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="userPassword">Пароль <span id="passwordHint">(оставьте пустым, чтобы не менять)</span></label>
-                        <input type="password" id="userPassword">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carEngine">Объем двигателя (л)</label>
+                            <input type="text" id="carEngine">
+                        </div>
+                        <div class="form-group">
+                            <label for="carHorsepower">Мощность (л.с.)</label>
+                            <input type="number" id="carHorsepower" min="0">
+                        </div>
                     </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carTransmission">Коробка передач</label>
+                            <select id="carTransmission">
+                                <option value="Автомат">Автомат</option>
+                                <option value="Механика">Механика</option>
+                                <option value="Робот">Робот</option>
+                                <option value="Вариатор">Вариатор</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="carFuel">Топливо</label>
+                            <select id="carFuel">
+                                <option value="Бензин">Бензин</option>
+                                <option value="Дизель">Дизель</option>
+                                <option value="Электричество">Электричество</option>
+                                <option value="Гибрид">Гибрид</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="carBody">Тип кузова</label>
+                            <select id="carBody">
+                                <option value="Седан">Седан</option>
+                                <option value="Внедорожник">Внедорожник</option>
+                                <option value="Хэтчбек">Хэтчбек</option>
+                                <option value="Купе">Купе</option>
+                                <option value="Универсал">Универсал</option>
+                                <option value="Минивэн">Минивэн</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="carColor">Цвет</label>
+                            <input type="text" id="carColor">
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
-                        <label for="userRole">Роль *</label>
-                        <select id="userRole" required>
-                            <option value="user">Пользователь</option>
-                            <option value="admin">Администратор</option>
-                        </select>
+                        <label for="carImage">Ссылка на изображение</label>
+                        <input type="url" id="carImage" placeholder="https://example.com/image.jpg">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="carDescription">Описание</label>
+                        <textarea id="carDescription" rows="3"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelUserBtn">Отмена</button>
-                <button class="btn btn-primary" id="saveUserBtn">Сохранить</button>
+                <button class="btn btn-secondary" id="cancelCarBtn">Отмена</button>
+                <button class="btn btn-primary" id="saveCarBtn">Сохранить</button>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно удаления пользователя -->
-    <div class="modal-overlay" id="deleteModal" style="display: none;">
+    <!-- Модальное окно удаления автомобиля -->
+    <div class="modal-overlay" id="deleteCarModal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Удаление пользователя</h2>
-                <button class="modal-close" id="closeDeleteModal">&times;</button>
+                <h2>Удаление автомобиля</h2>
+                <button class="modal-close" id="closeDeleteCarModal">&times;</button>
             </div>
             <div class="modal-body">
-                <p id="deleteMessage">Вы действительно хотите удалить этого пользователя?</p>
+                <p id="deleteCarMessage">Вы действительно хотите удалить этот автомобиль?</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelDeleteBtn">Отмена</button>
-                <button class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+                <button class="btn btn-secondary" id="cancelDeleteCarBtn">Отмена</button>
+                <button class="btn btn-danger" id="confirmDeleteCarBtn">Удалить</button>
             </div>
         </div>
     </div>
 
-    <!-- Модальные окна входа/регистрации (из SignInView.js) -->
+    <!-- Модальные окна входа/регистрации -->
     <div class="modal-overlay" id="loginModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -221,7 +294,6 @@
     </footer>
 
     <script src="../view/SignInView.js"></script>
-    <script src="../view/AdminUserView.js"></script>
     <script src="../view/AdminCarsView.js"></script>
 </body>
 </html>

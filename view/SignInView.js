@@ -509,6 +509,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateNavigationForRole(role) {
     const usersTabItem = document.getElementById('usersTabItem');
+    const carsTabItem=document.getElementById('carsTabItem');
     
     if (usersTabItem) {
         if (role === 'Администратор') {
@@ -517,6 +518,16 @@ document.addEventListener('DOMContentLoaded', function() {
             usersTabItem.style.display = 'none';
         }
     }
+
+    if(carsTabItem){
+        if(role==='Администратор'){
+            carsTabItem.style.display='block';
+        }else{
+            carsTabItem.style.display='none';
+        }
+    }
+
+
 }
 
 function updateAllUserLinks(role) {
