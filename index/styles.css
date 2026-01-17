@@ -40,7 +40,7 @@ body {
   left: 0;
   right: 0;
   background-color: var(--color-primary);
- 
+
   z-index: 1000;
   padding: 16px 0;
 }
@@ -48,7 +48,7 @@ body {
 .nav {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: left;
   width: 100%;
 }
 
@@ -1432,5 +1432,6 @@ body {
     .form-row {
         flex-direction: column;
         gap: 10px;
+        overflow-y: scroll;
     }
 }
