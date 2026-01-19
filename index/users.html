@@ -79,12 +79,12 @@
                         <input type="password" id="userPassword">
                     </div>
                     <div class="form-group">
-                        <label for="userRole">Роль *</label>
-                        <select id="userRole" required>
-                            <option value="user">Пользователь</option>
-                            <option value="admin">Администратор</option>
-                        </select>
-                    </div>
+    <label for="userRole">Роль</label>
+    <select id="userRole" name="userRole" required>
+        <!-- Опции будут заполнены динамически -->
+    </select>
+    <div class="error-message" id="userRoleError"></div>
+</div>
                 </form>
             </div>
             <div class="modal-footer">

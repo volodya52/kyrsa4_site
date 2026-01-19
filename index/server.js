@@ -381,14 +381,24 @@ app.get('/api/news/:type', async (req, res) => {
 // 5. ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
 app.get('/api/user', requireAuth, async (req, res) => {
     try {
+        // Получаем свежие данные пользователя из БД
+        const user = await db.findUserById(req.user.ID);
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+        
         res.json({
             success: true,
             user: {
-                id: req.user.ID,
-                name: req.user.Name,
-                email: req.user.Email,
-                phone: req.user.Phone,
-                role: req.user.Role_Name
+                id: user.ID,
+                name: user.Name,
+                email: user.Email,
+                phone: user.Phone || '',
+                role: user.Role_Name || 'Клиент'
             }
         });
     } catch (error) {
@@ -491,31 +501,64 @@ app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // Получить пользователя по ID
-app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+app.put('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const user = await db.findUserById(parseInt(req.params.id));
-        
-        if (!user) {
+        const userId = parseInt(req.params.id);
+        const { name, email, phone, password, role_id } = req.body;
+
+        // Проверяем существование пользователя
+        const existingUser = await db.findUserById(userId);
+        if (!existingUser) {
             return res.status(404).json({ 
                 success: false, 
                 error: 'Пользователь не найден' 
             });
         }
+
+        // Проверяем email на уникальность, если он изменился
+        if (email && email !== existingUser.Email) {
+            const userWithEmail = await db.findUserByEmail(email);
+            if (userWithEmail && userWithEmail.ID !== userId) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Пользователь с таким email уже существует' 
+                });
+            }
+        }
+
+        // Обновляем пользователя
+        const result = await db.updateUser(userId, {
+            name: name || existingUser.Name,
+            email: email || existingUser.Email,
+            phone: phone !== undefined ? phone : existingUser.Phone,
+            password: password || null,
+            role_id: role_id || existingUser.Role_ID
+        });
+
+        if (!result.success) {
+            return res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+        // Получаем обновленного пользователя
+        const updatedUser = await db.findUserById(userId);
         
-       res.json({
-        success: true,
-        user: {
-            id: user.ID,
-            name: user.Name,
-            email: user.Email,
-            phone: user.Phone || '',
-            role: user.Role_Name || 'Клиент',
-            role_id: user.Role_ID
-        // Убрали: created_at: user.Created_At || new Date().toISOString()
-    }
-});
+        res.json({
+            success: true,
+            user: {
+                id: updatedUser.ID, // Исправлено: было user.ID, стало updatedUser.ID
+                name: updatedUser.Name,
+                email: updatedUser.Email,
+                phone: updatedUser.Phone || '',
+                role: updatedUser.Role_Name || 'Клиент',
+                role_id: updatedUser.Role_ID
+            }
+        });
+
     } catch (error) {
-        console.error('Ошибка получения пользователя:', error);
+        console.error('Ошибка обновления пользователя:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 
@@ -556,23 +599,53 @@ app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
         }
 
         // Получаем созданного пользователя
-        const user = await db.findUserById(result.id);
+        const newUser = await db.findUserById(result.id);
         
         res.json({
-        success: true,
-        user: {
-            id: user.ID,
-            name: user.Name,
-            email: user.Email,
-            phone: user.Phone || '',
-            role: user.Role_Name || 'Клиент',
-            role_id: user.Role_ID
-        
-    }
-});
+            success: true,
+            user: {
+                id: newUser.ID,
+                name: newUser.Name,
+                email: newUser.Email,
+                phone: newUser.Phone || '',
+                role: newUser.Role_Name || 'Клиент',
+                role_id: newUser.Role_ID
+            }
+        });
 
     } catch (error) {
         console.error('Ошибка создания пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const user = await db.findUserById(parseInt(req.params.id));
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+        
+        res.json({
+            success: true,
+            user: {
+                id: user.ID,
+                name: user.Name,
+                email: user.Email,
+                phone: user.Phone || '',
+                role: user.Role_Name || 'Клиент',
+                role_id: user.Role_ID
+            }
+        });
+    } catch (error) {
+        console.error('Ошибка получения пользователя:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 

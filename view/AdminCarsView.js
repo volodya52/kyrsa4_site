@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Устанавливаем значения по умолчанию
         document.getElementById('carYear').value = new Date().getFullYear();
-        document.getElementById('carStatus').value = 'new';
+        document.getElementById('carStatus').value = 'NEW';
         document.getElementById('carTransmission').value = 'Автомат';
         document.getElementById('carFuel').value = 'Бензин';
         document.getElementById('carBody').value = 'Седан';
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('carFuel').value = car.fuel || 'Бензин';
             document.getElementById('carBody').value = car.body || 'Седан';
             document.getElementById('carColor').value = car.color || '';
-            document.getElementById('carStatus').value = car.status || 'new';
+            document.getElementById('carStatus').value = car.status || 'NEW';
             document.getElementById('carImage').value = car.image_url || '';
             document.getElementById('carDescription').value = car.description || '';
             

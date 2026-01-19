@@ -415,6 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
     
+    
  
     initProfilePage();
 });

@@ -30,6 +30,28 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = JSON.parse(userData);
         return user.role === 'Администратор';
     }
+
+    async function loadRoles() {
+    try {
+        const token = localStorage.getItem('auth_token');
+        const response = await fetch('/api/admin/roles', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.roles) {
+                return result.roles;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Ошибка загрузки ролей:', error);
+        return null;
+    }
+}
     
     // Загружаем список пользователей
     async function loadUsers() {
@@ -161,13 +183,39 @@ document.addEventListener('DOMContentLoaded', function() {
 }
     
     // Открываем модальное окно для добавления пользователя
-    function openAddUserModal() {
+    async function openAddUserModal() {
+    try {
         currentUser = null;
         document.getElementById('userModalTitle').textContent = 'Добавить пользователя';
         document.getElementById('passwordHint').style.display = 'inline';
         userForm.reset();
+        
+        // Загружаем и заполняем список ролей
+        const roles = await loadRoles();
+        const roleSelect = document.getElementById('userRole');
+        
+        if (roles) {
+            roleSelect.innerHTML = '';
+            roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id; // Используем ID роли
+                option.textContent = role.name;
+                roleSelect.appendChild(option);
+            });
+        } else {
+            // Запасной вариант
+            roleSelect.innerHTML = `
+                <option value="2">Клиент</option>
+                <option value="1">Администратор</option>
+            `;
+        }
+        
         userModal.style.display = 'flex';
+    } catch (error) {
+        console.error('Ошибка открытия модального окна:', error);
+        alert('Ошибка: ' + error.message);
     }
+}
     
     // Открываем модальное окно для редактирования пользователя
     window.editUser = async function(userId) {
@@ -197,13 +245,35 @@ document.addEventListener('DOMContentLoaded', function() {
         const user = result.user;
         currentUser = user;
         
+        // Загружаем роли для select
+        const roles = await loadRoles();
+        const roleSelect = document.getElementById('userRole');
+        
+        if (roles) {
+            roleSelect.innerHTML = '';
+            roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id;
+                option.textContent = role.name;
+                if (user.role_id == role.id || user.role === role.name) {
+                    option.selected = true;
+                }
+                roleSelect.appendChild(option);
+            });
+        } else {
+            // Запасной вариант
+            roleSelect.innerHTML = `
+                <option value="2" ${(user.role_id == 2 || user.role === 'Клиент') ? 'selected' : ''}>Клиент</option>
+                <option value="1" ${(user.role_id == 1 || user.role === 'Администратор') ? 'selected' : ''}>Администратор</option>
+            `;
+        }
+        
         document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
         document.getElementById('passwordHint').style.display = 'inline';
         document.getElementById('userId').value = user.id;
         document.getElementById('userName').value = user.name || '';
         document.getElementById('userEmail').value = user.email || '';
         document.getElementById('userPhone').value = user.phone || '';
-        document.getElementById('userRole').value = user.role || 'user';
         document.getElementById('userPassword').value = '';
         
         userModal.style.display = 'flex';
@@ -222,63 +292,64 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Сохранение пользователя
-    async function saveUser() {
-        const userData = {
-            name: document.getElementById('userName').value,
-            email: document.getElementById('userEmail').value,
-            phone: document.getElementById('userPhone').value,
-            role: document.getElementById('userRole').value
-        };
-        
-        const password = document.getElementById('userPassword').value;
-        if (password) {
-            userData.password = password;
-        }
-        
-        try {
-            const token = localStorage.getItem('auth_token');
-            let response;
-            
-            if (currentUser) {
-                // Редактирование существующего пользователя
-                response = await fetch(`/api/admin/users/${currentUser.id}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(userData)
-                });
-            } else {
-                // Добавление нового пользователя
-                response = await fetch('/api/admin/users', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(userData)
-                });
-            }
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Ошибка сохранения пользователя');
-            }
-            
-            closeModal(userModal);
-            loadUsers();
-            showSuccessMessage(
-                currentUser ? 
-                'Пользователь успешно обновлен!' : 
-                'Пользователь успешно добавлен!'
-            );
-            
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert('Ошибка сохранения пользователя: ' + error.message);
-        }
+   async function saveUser() {
+    const userData = {
+        name: document.getElementById('userName').value,
+        email: document.getElementById('userEmail').value,
+        phone: document.getElementById('userPhone').value || '',
+        role_id: parseInt(document.getElementById('userRole').value) // Изменено с role на role_id
+    };
+    
+    const password = document.getElementById('userPassword').value;
+    if (password) {
+        userData.password = password;
     }
+    
+    try {
+        const token = localStorage.getItem('auth_token');
+        let response;
+        
+        if (currentUser) {
+            // Редактирование существующего пользователя
+            response = await fetch(`/api/admin/users/${currentUser.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+        } else {
+            // Добавление нового пользователя
+            response = await fetch('/api/admin/users', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            });
+        }
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Ошибка сохранения пользователя');
+        }
+        
+        closeModal(userModal);
+        loadUsers();
+        showSuccessMessage(
+            currentUser ? 
+            'Пользователь успешно обновлен!' : 
+            'Пользователь успешно добавлен!'
+        );
+        
+    } catch (error) {
+        console.error('Ошибка:', error);
+        alert('Ошибка сохранения пользователя: ' + error.message);
+    }
+}
     
     // Удаление пользователя
     async function deleteUser() {
