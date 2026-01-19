@@ -3,6 +3,8 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const db = require('../database.js'); // Импортируем нашу базу данных
 
+
+
 const app = express();
 const PORT = 5000;
 

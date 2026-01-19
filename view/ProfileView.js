@@ -17,63 +17,123 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentUser = null;
     
     // Инициализация страницы профиля
-    async function initProfilePage() {
-        // Проверяем авторизацию
-        const userData = localStorage.getItem('user_data');
-        const token = localStorage.getItem('auth_token');
-        
-        if (!userData || !token) {
-            // Если пользователь не авторизован, перенаправляем на главную
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        // Получаем данные пользователя
+    // Инициализация страницы профиля
+async function initProfilePage() {
+    console.log('=== НАЧАЛО initProfilePage ===');
+    
+    // Проверяем авторизацию
+    const userData = localStorage.getItem('user_data');
+    const token = localStorage.getItem('auth_token');
+    
+    console.log('Данные из localStorage:', {
+        userData: userData,
+        token: token,
+        hasUserData: !!userData,
+        hasToken: !!token
+    });
+    
+    if (!userData || !token) {
+        // Если пользователь не авторизован, перенаправляем на главную
+        console.log('❌ Пользователь не авторизован, перенаправляю на главную');
+        console.log('userData отсутствует:', !userData);
+        console.log('token отсутствует:', !token);
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    console.log('✅ Есть данные для инициализации профиля');
+    
+    try {
+        // Парсим данные пользователя
         currentUser = JSON.parse(userData);
+        console.log('Текущий пользователь из localStorage:', currentUser);
         
-        // Загружаем профиль пользователя с сервера
-        await loadUserProfile();
+        // Сразу обновляем интерфейс данными из localStorage
+        updateUserProfile(currentUser);
+        
+        console.log('✅ Интерфейс обновлен данными из localStorage');
+        
+        // Пробуем загрузить свежие данные с сервера (но не блокируем интерфейс)
+        loadUserProfile().catch(error => {
+            console.error('Ошибка загрузки профиля с сервера:', error);
+            // Не перенаправляем пользователя, используем данные из localStorage
+        });
         
         // Загружаем избранные автомобили
-        await loadFavorites();
+        loadFavorites().catch(error => {
+            console.error('Ошибка загрузки избранного:', error);
+        });
         
         // Назначаем обработчики событий
         setupEventListeners();
+        
+        console.log('✅ Профиль успешно инициализирован');
+        
+    } catch (error) {
+        console.error('❌ Ошибка инициализации профиля:', error);
+        // Не перенаправляем сразу, покажем данные из localStorage
+        if (currentUser) {
+            updateUserProfile(currentUser);
+        } else {
+            // Только если совсем не можем получить данные
+            window.location.href = 'index.html';
+        }
     }
+    
+    console.log('=== КОНЕЦ initProfilePage ===');
+}
     
     // Загрузка профиля пользователя с сервера
     async function loadUserProfile() {
-        try {
-            const token = localStorage.getItem('auth_token');
-            const response = await fetch('/api/user', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!response.ok) {
-                if (response.status === 401) {
-                    // Неавторизован - перенаправляем на главную
-                    window.logoutUser();
-                    return;
-                }
-                throw new Error('Ошибка загрузки профиля');
-            }
-            
-            const data = await response.json();
-            
-            if (data.success && data.user) {
-                // Обновляем данные пользователя в localStorage
-                localStorage.setItem('user_data', JSON.stringify(data.user));
-                currentUser = data.user;
-                updateUserProfile(data.user);
-            }
-            
-        } catch (error) {
-            console.error('Ошибка загрузки профиля:', error);
-            showMessage('Ошибка загрузки профиля', 'error');
+    try {
+        const token = localStorage.getItem('auth_token');
+        
+        console.log('Загружаю профиль с сервера, токен:', token ? 'есть' : 'нет');
+        
+        if (!token) {
+            console.log('Токен отсутствует, пропускаю загрузку с сервера');
+            return;
         }
+        
+        const response = await fetch('/api/user', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        console.log('Ответ сервера на /api/user:', {
+            status: response.status,
+            ok: response.ok
+        });
+        
+        // Если получили 401, не перенаправляем, просто не обновляем данные
+        if (response.status === 401) {
+            console.warn('Токен недействителен, но продолжаем использовать данные из localStorage');
+            return;
+        }
+        
+        if (!response.ok) {
+            console.warn('Ошибка сервера, но продолжаем использовать данные из localStorage');
+            return;
+        }
+        
+        const data = await response.json();
+        console.log('Данные профиля с сервера:', data);
+        
+        if (data.success && data.user) {
+            // Обновляем данные пользователя в localStorage
+            localStorage.setItem('user_data', JSON.stringify(data.user));
+            currentUser = data.user;
+            updateUserProfile(data.user);
+            console.log('✅ Профиль обновлен данными с сервера');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка загрузки профиля с сервера:', error);
+        // Не показываем сообщение об ошибке пользователю
+        // Просто продолжаем использовать данные из localStorage
     }
+}
     
     // Обновление интерфейса профиля
     function updateUserProfile(user) {
