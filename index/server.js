@@ -1039,6 +1039,119 @@ app.get('/api/test-cars', async (req, res) => {
     }
 });
 
+app.post('/api/test-drive', async (req, res) => {
+    try {
+        const { name, phone, email, date, time, message, carId, carBrand, carModel } = req.body;
+
+        if (!name || !phone || !email || !date || !time || !carId) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Заполните все обязательные поля' 
+            });
+        }
+
+        // Здесь можно сохранить заявку в БД
+        // Пока просто возвращаем успех
+        console.log('Новая заявка на тест-драйв:', req.body);
+        
+        res.json({
+            success: true,
+            message: 'Заявка на тест-драйв создана',
+            data: req.body
+        });
+
+    } catch (error) {
+        console.error('Ошибка создания заявки на тест-драйв:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// 2. Buy API (упрощенный Trade-In)
+app.post('/api/buy', async (req, res) => {
+    try {
+        const { name, phone, email, paymentMethod, message, carId, carBrand, carModel } = req.body;
+
+        if (!name || !phone || !email || !paymentMethod || !carId) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Заполните все обязательные поля' 
+            });
+        }
+
+        console.log('Новая заявка на покупку:', req.body);
+        
+        res.json({
+            success: true,
+            message: 'Заявка на покупку создана',
+            data: req.body
+        });
+
+    } catch (error) {
+        console.error('Ошибка создания заявки на покупку:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// 3. Extended Trade-In API
+app.post('/api/trade-in/extended', async (req, res) => {
+    try {
+        const { 
+            name, phone, email, 
+            userCarBrand, userCarModel, userCarYear, 
+            userCarMileage, userCarCondition, message,
+            carId, carBrand, carModel 
+        } = req.body;
+
+        if (!name || !phone || !email || !userCarBrand || !userCarModel || 
+            !userCarYear || !userCarMileage || !userCarCondition || !carId) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Заполните все обязательные поля' 
+            });
+        }
+
+        // Сохраняем в TradeIn таблицу
+        const tradeInData = {
+            userId: req.user ? req.user.ID : null,
+            carId: parseInt(carId),
+            brand: userCarBrand,
+            model: userCarModel,
+            year: parseInt(userCarYear),
+            mileage: parseInt(userCarMileage),
+            condition: userCarCondition,
+            phone: phone
+        };
+
+        const result = await db.createTradeIn(tradeInData);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Заявка на Trade-In создана',
+                id: result.id
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка создания заявки на Trade-In:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));

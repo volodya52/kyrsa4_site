@@ -149,13 +149,6 @@ class CarView {
             this.carsGrid.innerHTML = `
                 <div class="no-results">
                     <h3>Автомобили не найдены</h3>
-                    <p>В базе данных нет автомобилей или произошла ошибка загрузки</p>
-                    <p>Проверьте:</p>
-                    <ul>
-                        <li>Есть ли автомобили в базе данных</li>
-                        <li>Работает ли API сервер</li>
-                        <li>Консоль браузера для подробностей</li>
-                    </ul>
                     <button class="btn" onclick="carView.loadCars()">Попробовать снова</button>
                 </div>
             `;
@@ -231,14 +224,16 @@ class CarView {
                         <span class="spec-item">${formattedMileage}</span>
                     </div>
                     <div class="car-footer">
-                        <div class="car-price">${formattedPrice} ₽</div>
-                        <button class="btn btn-small view-details" data-id="${id}">
-                            Подробнее
-                        </button>
-                    </div>
+                <div class="car-price">${formattedPrice} ₽</div>
+                <button class="btn btn-small view-details" data-id="${id}" onclick="window.location.href='car-details.html?id=${id}'">
+                    Подробнее
+                </button>
+            </div>
                 </div>
             </div>
         `;
+
+        
     }
     
     // Обновление опций фильтров

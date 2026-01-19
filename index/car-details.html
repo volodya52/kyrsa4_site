@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Детали автомобиля</title>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <span class="logo-text">АВТОСАЛОН</span>
+                </div>
+                
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="index.html">Главная</a></li>
+                    <li><a href="cars.html">Автомобили</a></li>
+                    <li><a href="uslugi.html">Услуги</a></li>
+                    <li><a href="about.html">О нас</a></li>
+                    <li><a href="contact.html">Контакты</a></li>
+                    <li><a href="news.html">Новости</a></li>
+                    <li id="carsTabItem" style="display: none;">
+                        <a href="carsCRUD.html">Управление авто</a>
+                    </li>
+                    <li id="usersTabItem" style="display: none;">
+                        <a href="users.html">Пользователи</a>
+                    </li>
+                    <li><a href="#" id="signinLink">Войти</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="car-details-page">
+            <div class="container">
+                <a href="cars.html" class="back-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Назад к каталогу
+                </a>
+                
+                <div id="carDetailsContent">
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p>Загрузка информации об автомобиле...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="testDriveModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Запись на тест-драйв</h2>
+                <button class="modal-close" id="closeTestDriveModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="testDriveName">Имя</label>
+                    <input type="text" id="testDriveName" placeholder="Введите ваше имя" required>
+                </div>
+                <div class="form-group">
+                    <label for="testDrivePhone">Телефон</label>
+                    <input type="tel" id="testDrivePhone" placeholder="+7 (___) ___-__-__" required>
+                </div>
+                <div class="form-group">
+                    <label for="testDriveEmail">Email</label>
+                    <input type="email" id="testDriveEmail" placeholder="Введите ваш email" required>
+                </div>
+                <div class="form-group">
+                    <label for="testDriveDate">Предпочтительная дата</label>
+                    <input type="date" id="testDriveDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="testDriveTime">Предпочтительное время</label>
+                    <select id="testDriveTime" required>
+                        <option value="">Выберите время</option>
+                        <option value="10:00">10:00</option>
+                        <option value="11:00">11:00</option>
+                        <option value="12:00">12:00</option>
+                        <option value="13:00">13:00</option>
+                        <option value="14:00">14:00</option>
+                        <option value="15:00">15:00</option>
+                        <option value="16:00">16:00</option>
+                        <option value="17:00">17:00</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="testDriveMessage">Дополнительные пожелания</label>
+                    <textarea id="testDriveMessage" placeholder="Укажите дополнительную информацию"></textarea>
+                </div>
+                <p id="testDriveCarInfo" style="font-size: 14px; color: #666; margin-bottom: 20px;"></p>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelTestDriveBtn">Отмена</button>
+                <button class="btn-primary" id="confirmTestDriveBtn">Записаться</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно Trade-In -->
+    <div class="modal-overlay" id="tradeInModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Trade-In: Оценка вашего автомобиля</h2>
+                <button class="modal-close" id="closeTradeInModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="tradeInBrand">Марка вашего автомобиля</label>
+                    <input type="text" id="tradeInBrand" placeholder="Например: Toyota" required>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInModel">Модель</label>
+                    <input type="text" id="tradeInModel" placeholder="Например: Camry" required>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInYear">Год выпуска</label>
+                    <input type="number" id="tradeInYear" placeholder="Например: 2018" min="1990" max="2024" required>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInMileage">Пробег (км)</label>
+                    <input type="number" id="tradeInMileage" placeholder="Например: 75000" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInCondition">Состояние</label>
+                    <select id="tradeInCondition" required>
+                        <option value="">Выберите состояние</option>
+                        <option value="Отличное">Отличное</option>
+                        <option value="Хорошее">Хорошее</option>
+                        <option value="Удовлетворительное">Удовлетворительное</option>
+                        <option value="Требует ремонта">Требует ремонта</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInName">Ваше имя</label>
+                    <input type="text" id="tradeInName" placeholder="Введите ваше имя" required>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInPhone">Телефон</label>
+                    <input type="tel" id="tradeInPhone" placeholder="+7 (___) ___-__-__" required>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInEmail">Email</label>
+                    <input type="email" id="tradeInEmail" placeholder="Введите ваш email" required>
+                </div>
+                <div class="form-group">
+                    <label for="tradeInMessage">Дополнительная информация</label>
+                    <textarea id="tradeInMessage" placeholder="Опишите особенности вашего автомобиля"></textarea>
+                </div>
+                <p id="tradeInCarInfo" style="font-size: 14px; color: #666; margin-bottom: 20px;"></p>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelTradeInBtn">Отмена</button>
+                <button class="btn-primary" id="confirmTradeInBtn">Отправить заявку</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно покупки -->
+    <div class="modal-overlay" id="buyModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Покупка автомобиля</h2>
+                <button class="modal-close" id="closeBuyModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="buyName">Имя</label>
+                    <input type="text" id="buyName" placeholder="Введите ваше имя" required>
+                </div>
+                <div class="form-group">
+                    <label for="buyPhone">Телефон</label>
+                    <input type="tel" id="buyPhone" placeholder="+7 (___) ___-__-__" required>
+                </div>
+                <div class="form-group">
+                    <label for="buyEmail">Email</label>
+                    <input type="email" id="buyEmail" placeholder="Введите ваш email" required>
+                </div>
+                <div class="form-group">
+                    <label for="buyPaymentMethod">Способ оплаты</label>
+                    <select id="buyPaymentMethod" required>
+                        <option value="">Выберите способ оплаты</option>
+                        <option value="Наличные">Наличные</option>
+                        <option value="Кредит">Кредит</option>
+                        <option value="Рассрочка">Рассрочка</option>
+                        <option value="Trade-In">Trade-In</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="buyMessage">Дополнительные пожелания</label>
+                    <textarea id="buyMessage" placeholder="Укажите дополнительную информацию"></textarea>
+                </div>
+                <p id="buyCarInfo" style="font-size: 14px; color: #666; margin-bottom: 20px;"></p>
+            </div>
+            <div class="form-actions">
+                <button class="btn-secondary" id="cancelBuyBtn">Отмена</button>
+                <button class="btn-primary" id="confirmBuyBtn">Отправить заявку</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 class="footer-title">АВТОСАЛОН</h4>
+                    <p class="footer-text">Ваш надежный партнер в мире премиум автомобилей</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Навигация</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Главная</a></li>
+                        <li><a href="cars.html">Автомобили</a></li>
+                        <li><a href="uslugi.html">Услуги</a></li>
+                        <li><a href="about.html">О нас</a></li>
+                        <li><a href="contact.html">Контакты</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Контакты</h4>
+                    <ul class="footer-links">
+                        <li>+7 (495) 123-45-67</li>
+                        <li>info@autosalon.ru</li>
+                        <li>Москва, ул. Примерная, 123</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Мы в соцсетях</h4>
+                    <div class="social-links">
+                        <a href="#" aria-label="VK">VK</a>
+                        <a href="#" aria-label="Instagram">Instagram</a>
+                        <a href="#" aria-label="Telegram">Telegram</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../view/SignInView.js"></script>
+    <script src="../view/AdminUserView.js"></script>
+    <script src="../view/CarDetailsView.js"></script>
+</body>
+</html>
