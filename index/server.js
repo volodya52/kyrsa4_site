@@ -1003,6 +1003,42 @@ app.delete('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) =>
     }
 });
 
+app.get('/api/debug/cars', async (req, res) => {
+    try {
+        const cars = await db.getAllCars();
+        console.log('Все машины в базе:', cars);
+        
+        res.json({
+            success: true,
+            count: cars.length,
+            cars: cars
+        });
+    } catch (error) {
+        console.error('Ошибка:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/test-cars', async (req, res) => {
+    try {
+        const cars = await db.getAllCars();
+        
+        // Проверяем структуру данных
+        console.log('Структура первого автомобиля:', cars[0]);
+        console.log('Ключи первого автомобиля:', Object.keys(cars[0]));
+        
+        res.json({
+            success: true,
+            count: cars.length,
+            cars: cars,
+            sample_car: cars[0]
+        });
+    } catch (error) {
+        console.error('Ошибка:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));

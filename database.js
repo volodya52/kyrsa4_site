@@ -493,7 +493,9 @@ class DatabaseCreate {
                 params.push(filters.body);
             }
 
-            query += ' AND Status = "В наличии" ORDER BY ID DESC';
+            //query += ' AND Status = "В наличии" ORDER BY ID DESC';
+
+             query += ' ORDER BY ID DESC';
 
             this.db.all(query, params, (err, rows) => {
                 if (err) {
