@@ -663,6 +663,70 @@ isCarInFavorites(userId, carId) {
         });
     }
 
+    getNewsById(id) {
+    return new Promise((resolve, reject) => {
+        this.db.get(
+            `SELECT n.*, u.Name as Author_Name, c.Brand as Car_Brand, c.Model as Car_Model
+             FROM News n
+             LEFT JOIN Users u ON n.User_ID = u.ID
+             LEFT JOIN Cars c ON n.Car_ID = c.ID
+             WHERE n.ID = ?`,
+            [id],
+            (err, row) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(row || null);
+                }
+            }
+        );
+    });
+}
+
+deleteNews(id) {
+    return new Promise((resolve, reject) => {
+        this.db.run(
+            'DELETE FROM News WHERE ID = ?',
+            [id],
+            function(err) {
+                if (err) {
+                    reject({ success: false, error: err.message });
+                } else {
+                    resolve({ success: true, changes: this.changes });
+                }
+            }
+        );
+    });
+}
+
+updateNews(id, newsData) {
+    return new Promise((resolve, reject) => {
+        this.db.run(
+            `UPDATE News SET 
+                Title = ?, Description = ?, Type = ?, 
+                User_ID = ?, Car_ID = ?, Image_url = ?
+             WHERE ID = ?`,
+            [
+                newsData.title,
+                newsData.description,
+                newsData.type,
+                newsData.userId,
+                newsData.carId,
+                newsData.image_url,
+                id
+            ],
+            function(err) {
+                if (err) {
+                    reject({ success: false, error: err.message });
+                } else {
+                    resolve({ success: true, changes: this.changes });
+                }
+            }
+        );
+    });
+}
+
+
     addNews(newsData) {
         return new Promise((resolve, reject) => {
             this.db.run(

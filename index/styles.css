@@ -2961,3 +2961,297 @@ body {
     background: var(--color-primary);
 }
 
+.news-page {
+    padding-top: 80px;
+}
+
+.hero-news {
+    background: linear-gradient(135deg, var(--color-primary) 0%, #333 100%);
+    padding: 80px 0;
+    text-align: center;
+    color: var(--color-white);
+}
+
+.hero-news-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.hero-news .hero-title {
+    font-size: 48px;
+    margin-bottom: 20px;
+    color: var(--color-white);
+}
+
+.hero-news .hero-subtitle {
+    font-size: 18px;
+    opacity: 0.9;
+}
+
+.news-filters-section {
+    background: var(--color-white);
+    padding: 20px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.news-filters {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.news-filters .filter-btn {
+    padding: 10px 20px;
+    background: transparent;
+    color: var(--color-primary);
+    border: 2px solid var(--color-border);
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.news-filters .filter-btn:hover,
+.news-filters .filter-btn.active {
+    background: var(--color-primary);
+    color: var(--color-white);
+    border-color: var(--color-primary);
+}
+
+.news-grid-section {
+    padding: 60px 0;
+}
+
+.news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 30px;
+}
+
+.news-card {
+    background: var(--color-white);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
+}
+
+.news-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.news-card:hover .news-image img {
+    transform: scale(1.05);
+}
+
+.news-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-white);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.news-type-news {
+    background: var(--color-primary);
+}
+
+.news-type-promotions {
+    background: #ffc107;
+}
+
+.news-type-reviews {
+    background: #17a2b8;
+}
+
+.news-type-events {
+    background: #28a745;
+}
+
+.news-content {
+    padding: 25px;
+}
+
+.news-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.news-car-info {
+    background: var(--color-bg);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--color-text-light);
+    margin-bottom: 15px;
+    display: inline-block;
+}
+
+.news-description {
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-size: 15px;
+}
+
+.news-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid var(--color-border);
+}
+
+.news-author {
+    font-size: 14px;
+    color: var(--color-text-light);
+}
+
+/* News Detail Modal */
+.news-detail-image {
+    margin-bottom: 25px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.news-detail-image img {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover;
+}
+
+.news-meta {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.news-meta .news-type {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-white);
+    margin-right: 15px;
+}
+
+.news-full-description {
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--color-text);
+    white-space: pre-line;
+}
+
+.news-full-description p {
+    margin-bottom: 15px;
+}
+
+/* Loading and No News States */
+.no-news {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.no-news h3 {
+    color: var(--color-primary);
+    margin-bottom: 15px;
+}
+
+.no-news p {
+    color: var(--color-text-light);
+    margin-bottom: 25px;
+}
+
+/* Table Styles for Admin */
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 30px;
+}
+
+.text-small {
+    font-size: 13px;
+    color: var(--color-text-light);
+    margin-top: 5px;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 8px;
+    margin: 20px 0;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .hero-news .hero-title {
+        font-size: 36px;
+    }
+    
+    .news-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .news-filters {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 10px;
+    }
+    
+    .news-filters .filter-btn {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-news {
+        padding: 60px 0;
+    }
+    
+    .hero-news .hero-title {
+        font-size: 28px;
+    }
+    
+    .news-content {
+        padding: 20px;
+    }
+    
+    .news-title {
+        font-size: 18px;
+    }
+}
+

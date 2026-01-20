@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Автосалон с широким выбором автомобилей. Trade-in, кредит, гарантия качества. Более 500 автомобилей в наличии.">
-    <title>Автосалон</title>
+    <meta name="description" content="Новости автосалона. Акции, специальные предложения, обзоры автомобилей и последние события.">
+    <title>Новости - Автосалон</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
     <header class="header">
         <div class="container">
             <nav class="nav">
@@ -17,25 +16,85 @@
                 </div>
                 
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="index.html">Главная</a></li>
-                    <li><a href="cars.html">Автомобили</a></li>
-                    <li><a href="uslugi.html">Услуги</a></li>
-                    <li><a href="about.html">О нас</a></li>
-                    <li><a href="contact.html">Контакты</a></li>
-                    <li><a href="news.html">Новости</a></li>
-                    <li id="carsTabItem" style="display: none;">
-                        <a href="carsCRUD.html">Управление авто</a>
-                    </li>
-                    <li id="usersTabItem" style="display: none;">
-                        <a href="users.html">Пользователи</a>
-                    </li>
-                    <li><a href="#" id="signinLink">Войти</a></li>
-                </ul>
+    <li><a href="index.html">Главная</a></li>
+    <li><a href="cars.html">Автомобили</a></li>
+    <li><a href="uslugi.html">Услуги</a></li>
+    <li><a href="about.html">О нас</a></li>
+    <li><a href="contact.html">Контакты</a></li>
+    <li><a href="news.html" class="active">Новости</a></li>
+    <li id="carsTabItem" style="display: none;">
+        <a href="carsCRUD.html">Управление авто</a>
+    </li>
+    <li id="usersTabItem" style="display: none;">
+        <a href="users.html">Пользователи</a>
+    </li>
+    <li id="newsTabItem" style="display: none;">
+        <a href="newsCRUD.html">Управление новостями</a> <!-- ИЗМЕНЕНО -->
+    </li>
+    <li><a href="#" id="signinLink">Войти</a></li>
+</ul>
             </nav>
         </div>
     </header>
+
+    <main class="news-page">
+        <!-- Hero Section -->
+        <section class="hero-news">
+            <div class="container">
+                <div class="hero-news-content">
+                    <h1 class="hero-title">Новости и Акции</h1>
+                    <p class="hero-subtitle">Будьте в курсе последних событий, акций и специальных предложений нашего автосалона</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- News Filters -->
+        <section class="news-filters-section">
+            <div class="container">
+                <div class="news-filters">
+                    <button class="filter-btn active" data-type="all">Все новости</button>
+                    <button class="filter-btn" data-type="news">Новости</button>
+                    <button class="filter-btn" data-type="promotions">Акции</button>
+                    <button class="filter-btn" data-type="reviews">Обзоры</button>
+                    <button class="filter-btn" data-type="events">События</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- News Grid -->
+        <section class="news-grid-section">
+            <div class="container">
+                <div class="news-grid" id="newsGrid">
+                    <!-- News items will be loaded here -->
+                </div>
+                
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Загружаем новости...</p>
+                </div>
+                
+                <div class="no-news" id="noNews" style="display: none;">
+                    <h3>Новостей не найдено</h3>
+                    <p>Попробуйте изменить фильтры поиска</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- News Detail Modal -->
+        <div class="modal-overlay" id="newsDetailModal">
+            <div class="modal-content modal-wide">
+                <div class="modal-header">
+                    <h2 id="modalNewsTitle"></h2>
+                    <button class="modal-close" id="closeNewsModal">&times;</button>
+                </div>
+                <div class="modal-body" id="modalNewsBody">
+                    <!-- News content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
     <script src="../view/SignInView.js"></script>
-    <script src="../view/AdminUserView.js"></script>
-    <script src="../view/AdminCarsView.js"></script>
+    <script src="../view/NewsView.js"></script>
 </body>
 </html>

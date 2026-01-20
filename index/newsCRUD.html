@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Управление новостями автосалона">
+    <title>Управление новостями - Админ панель</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <span class="logo-text">АВТОСАЛОН - Админ</span>
+                </div>
+                
+                <ul class="nav-menu" id="navMenu">
+    <li><a href="index.html">Главная</a></li>
+    <li><a href="cars.html">Автомобили</a></li>
+    <li><a href="uslugi.html">Услуги</a></li>
+    <li><a href="about.html">О нас</a></li>
+    <li><a href="contact.html">Контакты</a></li>
+    <li><a href="news.html" class="active">Новости</a></li>
+    <li id="carsTabItem" style="display: none;">
+        <a href="carsCRUD.html">Управление авто</a>
+    </li>
+    <li id="usersTabItem" style="display: none;">
+        <a href="users.html">Пользователи</a>
+    </li>
+    <li id="newsTabItem" style="display: none;">
+        <a href="newsCRUD.html">Управление новостями</a> <!-- ИЗМЕНЕНО -->
+    </li>
+    <li><a href="#" id="signinLink">Войти</a></li>
+</ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="admin-container">
+        <div class="admin-header">
+            <h1 class="admin-title">Управление новостями</h1>
+            <div class="admin-actions">
+                <button class="btn" id="addNewsBtn">+ Добавить новость</button>
+                <button class="btn btn-view" onclick="window.location.href='news.html'">Просмотр новостей</button>
+            </div>
+        </div>
+
+        <!-- News Table -->
+        <div class="table-container">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Заголовок</th>
+                        <th>Тип</th>
+                        <th>Автор</th>
+                        <th>Дата</th>
+                        <th>Автомобиль</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="newsTableBody">
+                    <!-- News will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Loading and No Data States -->
+        <div class="loading" id="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Загружаем новости...</p>
+        </div>
+        
+        <div class="no-data" id="noNews" style="display: none;">
+            <h3>Новостей нет</h3>
+            <p>Добавьте первую новость, нажав кнопку "Добавить новость"</p>
+        </div>
+    </main>
+
+    <!-- News Form Modal -->
+    <div class="modal-overlay modal-user-form" id="newsFormModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalNewsFormTitle">Добавить новость</h2>
+                <button class="modal-close" id="closeNewsFormModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="newsForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newsTitle">Заголовок *</label>
+                            <input type="text" id="newsTitle" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newsType">Тип *</label>
+                            <select id="newsType" required>
+                                <option value="news">Новость</option>
+                                <option value="promotions">Акция</option>
+                                <option value="reviews">Обзор</option>
+                                <option value="events">Событие</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="newsDescription">Описание *</label>
+                        <textarea id="newsDescription" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="newsCarId">ID автомобиля (опционально)</label>
+                            <input type="number" id="newsCarId" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="newsImageUrl">URL изображения</label>
+                            <input type="text" id="newsImageUrl">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Автомобиль</label>
+                        <div id="carInfo" class="car-info-summary" style="display: none;">
+                            <!-- Car info will be displayed here -->
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="newsId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn" id="cancelNewsBtn">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveNewsBtn">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../view/SignInView.js"></script>
+    <script src="../view/NewsAdminView.js"></script>
+</body>
+</html>

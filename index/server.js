@@ -769,6 +769,25 @@ app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) =
     }
 });
 
+app.get('/api/user/roles', requireAuth, async (req, res) => {
+    try {
+        const roles = await db.getAllRoles();
+        
+        res.json({
+            success: true,
+            user: req.user,
+            roles: roles,
+            isAdmin: req.user.Role_Name === 'Администратор' || req.user.Role_ID === 1
+        });
+    } catch (error) {
+        console.error('Ошибка получения ролей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
 app.post('/api/user/favorites', requireAuth, async (req, res) => {
     try {
         const { carId } = req.body;
@@ -885,6 +904,193 @@ app.get('/api/user/favorites/check/:carId', requireAuth, async (req, res) => {
         
     } catch (error) {
         console.error('Ошибка проверки избранного:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.post('/api/admin/news', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { title, description, type, car_id, image_url } = req.body;
+
+        // Валидация
+        if (!title || !description || !type) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Заполните все обязательные поля' 
+            });
+        }
+
+        const newsData = {
+            title,
+            description,
+            type,
+            userId: req.user.ID,
+            carId: car_id || null,
+            image_url: image_url || null
+        };
+
+        const result = await db.addNews(newsData);
+
+        if (result.success) {
+            const news = await db.getNewsById(result.id);
+            
+            res.status(201).json({
+                success: true,
+                message: 'Новость успешно создана',
+                news: {
+                    id: news.ID,
+                    title: news.Title,
+                    description: news.Description,
+                    type: news.Type,
+                    author_name: req.user.Name,
+                    car_brand: news.Car_Brand,
+                    car_model: news.Car_Model,
+                    image_url: news.Image_url,
+                    created_at: news.Created_At
+                }
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка создания новости:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.put('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const newsId = parseInt(req.params.id);
+        const { title, description, type, car_id, image_url } = req.body;
+
+        // Проверяем существование новости
+        const existingNews = await db.getNewsById(newsId);
+        if (!existingNews) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Новость не найдена' 
+            });
+        }
+
+        // Обновляем новость
+        const result = await db.updateNews(newsId, {
+            title: title || existingNews.Title,
+            description: description || existingNews.Description,
+            type: type || existingNews.Type,
+            carId: car_id || existingNews.Car_ID,
+            image_url: image_url || existingNews.Image_url,
+            userId: req.user.ID
+        });
+
+        if (result.success) {
+            const updatedNews = await db.getNewsById(newsId);
+            
+            res.json({
+                success: true,
+                message: 'Новость успешно обновлена',
+                news: {
+                    id: updatedNews.ID,
+                    title: updatedNews.Title,
+                    description: updatedNews.Description,
+                    type: updatedNews.Type,
+                    author_name: req.user.Name,
+                    car_brand: updatedNews.Car_Brand,
+                    car_model: updatedNews.Car_Model,
+                    image_url: updatedNews.Image_url,
+                    created_at: updatedNews.Created_At
+                }
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка обновления новости:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.delete('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const newsId = parseInt(req.params.id);
+
+        // Проверяем существование новости
+        const existingNews = await db.getNewsById(newsId);
+        if (!existingNews) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Новость не найдена' 
+            });
+        }
+
+        // Удаляем новость
+        const result = await db.deleteNews(newsId);
+
+        if (result.success) {
+            res.json({
+                success: true,
+                message: 'Новость успешно удалена'
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка удаления новости:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.get('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const news = await db.getNewsById(parseInt(req.params.id));
+        
+        if (!news) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Новость не найдена' 
+            });
+        }
+        
+        res.json({
+            success: true,
+            news: {
+                id: news.ID,
+                title: news.Title,
+                description: news.Description,
+                type: news.Type,
+                author_name: news.Author_Name,
+                car_id: news.Car_ID,
+                car_brand: news.Car_Brand,
+                car_model: news.Car_Model,
+                image_url: news.Image_url,
+                created_at: news.Created_At
+            }
+        });
+    } catch (error) {
+        console.error('Ошибка получения новости:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 

@@ -550,6 +550,86 @@ function updateAllUserLinks(role) {
         });
     });
 }
+    async function updateNav() {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+        // Не авторизован
+        showTabItems(false, false, false);
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/user', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (data.success) {
+                const user = data.user;
+                
+                // Проверка роли (несколько возможных вариантов)
+                const isAdmin = user.role === 'Администратор' || 
+                               user.role === 'admin' || 
+                               user.role === 'Administrator' ||
+                               user.role_id === 1;
+                
+                // Отображаем соответствующие пункты меню
+                showTabItems(isAdmin, isAdmin, isAdmin);
+                const newsTabItem = document.getElementById('newsTabItem');
+if (newsTabItem && user.role === 'Администратор') {
+    newsTabItem.style.display = 'block';
+} else if (newsTabItem) {
+    newsTabItem.style.display = 'none';
+}
+                
+                // Обновляем кнопку входа/выхода
+                const signinLink = document.getElementById('signinLink');
+                if (signinLink) {
+                    signinLink.textContent = 'Выйти';
+                    signinLink.href = '#';
+                    signinLink.onclick = logoutUser;
+                }
+            } else {
+                // Не удалось получить данные пользователя
+                localStorage.removeItem('token');
+                showTabItems(false, false, false);
+            }
+        } else {
+            // Ошибка авторизации
+            localStorage.removeItem('token');
+            showTabItems(false, false, false);
+        }
+    } catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+        localStorage.removeItem('token');
+        showTabItems(false, false, false);
+    }
+}
+    function showTabItems(showCars, showUsers, showNews) {
+    const carsTabItem = document.getElementById('carsTabItem');
+    const usersTabItem = document.getElementById('usersTabItem');
+    const newsTabItem = document.getElementById('newsTabItem');
+    
+    if (carsTabItem) {
+        carsTabItem.style.display = showCars ? 'block' : 'none';
+    }
+    
+    if (usersTabItem) {
+        usersTabItem.style.display = showUsers ? 'block' : 'none';
+    }
+    
+    if (newsTabItem) {
+        newsTabItem.style.display = showNews ? 'block' : 'none';
+    }
+    }
+
+    // Вызов при загрузке страницы
+    document.addEventListener('DOMContentLoaded', updateNav);
     
     
     checkAuth();
