@@ -299,7 +299,6 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
                     </span>
                 </td>
                 <td>${news.author_name || 'Администратор'}</td>
-                <td>${carInfo}</td>
                 <td>
                     <div class="user-actions">
                         <button class="btn btn-small edit-news-btn" 

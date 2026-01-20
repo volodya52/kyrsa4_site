@@ -1,220 +1,412 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const loginModal = document.getElementById('loginModal');
-    const registerModal = document.getElementById('registerModal');
-    const signinLinks = document.querySelectorAll('#signinLink, .nav-menu a[href="signin.html"]');
-    const closeLoginModal = document.getElementById('closeLoginModal');
-    const closeRegisterModal = document.getElementById('closeRegisterModal');
-    const cancelLoginBtn = document.getElementById('cancelLoginBtn');
-    const cancelRegisterBtn = document.getElementById('cancelRegisterBtn');
-    const showRegisterModalLink = document.getElementById('showRegisterModalLink');
-    const showLoginModalLink = document.getElementById('showLoginModalLink');
-    const confirmLoginBtn = document.getElementById('confirmLoginBtn');
-    const confirmRegisterBtn = document.getElementById('confirmRegisterBtn');
+// view/SignInView.js - ИСПРАВЛЕННЫЙ
+class SignInView {
+    constructor() {
+        console.log('SignInView initializing...');
+        
+        this.token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+        this.user = null;
+        
+        // Элементы модальных окон
+        this.modals = {
+            login: null,
+            register: null
+        };
+        
+        this.init();
+    }
     
-    function openModal(modal) {
+    init() {
+        console.log('Initializing SignInView...');
+        
+        // Ждем полной загрузки DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.setup());
+        } else {
+            setTimeout(() => this.setup(), 100);
+        }
+    }
+    
+    async setup() {
+        console.log('Setting up SignInView...');
+        
+        // Находим элементы
+        this.signinLinks = document.querySelectorAll('#signinLink, .nav-menu a[href="signin.html"]');
+        this.modals.login = document.getElementById('loginModal');
+        this.modals.register = document.getElementById('registerModal');
+        
+        // Настраиваем обработчики событий
+        this.setupEventListeners();
+        
+        // Проверяем состояние авторизации
+        await this.checkAuthState();
+        
+        // Проверяем валидность токена на сервере
+        await this.validateToken();
+    }
+    
+    setupEventListeners() {
+        // Обработчики для ссылок входа
+        this.signinLinks.forEach(link => {
+            link.addEventListener('click', (e) => this.handleSignInClick(e, link));
+        });
+        
+        // Обработчики для модальных окон (если они есть в DOM)
+        this.setupModalListeners();
+        
+        // Глобальные обработчики Enter в формах
+        this.setupFormEnterHandlers();
+    }
+    
+    setupModalListeners() {
+        // Закрытие модальных окон
+        const closeButtons = {
+            login: ['closeLoginModal', 'cancelLoginBtn'],
+            register: ['closeRegisterModal', 'cancelRegisterBtn']
+        };
+        
+        // Назначаем обработчики закрытия
+        Object.keys(closeButtons).forEach(modalType => {
+            closeButtons[modalType].forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    btn.addEventListener('click', () => this.closeModal(modalType));
+                }
+            });
+        });
+        
+        // Переключение между модальными окнами
+        const switchLinks = {
+            toRegister: 'showRegisterModalLink',
+            toLogin: 'showLoginModalLink'
+        };
+        
+        const toRegisterLink = document.getElementById(switchLinks.toRegister);
+        if (toRegisterLink) {
+            toRegisterLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.switchModal('login', 'register');
+            });
+        }
+        
+        const toLoginLink = document.getElementById(switchLinks.toLogin);
+        if (toLoginLink) {
+            toLoginLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.switchModal('register', 'login');
+            });
+        }
+        
+        // Кнопки подтверждения
+        const confirmLoginBtn = document.getElementById('confirmLoginBtn');
+        if (confirmLoginBtn) {
+            confirmLoginBtn.addEventListener('click', () => this.doLogin());
+        }
+        
+        const confirmRegisterBtn = document.getElementById('confirmRegisterBtn');
+        if (confirmRegisterBtn) {
+            confirmRegisterBtn.addEventListener('click', () => this.doRegister());
+        }
+    }
+    
+    setupFormEnterHandlers() {
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const regConfirmPassword = document.getElementById('regConfirmPassword');
+        
+        if (loginEmail) {
+            loginEmail.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('confirmLoginBtn')?.click();
+                }
+            });
+        }
+        
+        if (loginPassword) {
+            loginPassword.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('confirmLoginBtn')?.click();
+                }
+            });
+        }
+        
+        if (regConfirmPassword) {
+            regConfirmPassword.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('confirmRegisterBtn')?.click();
+                }
+            });
+        }
+    }
+    
+    handleSignInClick(e, link) {
+        // ВАЖНО: проверяем, авторизован ли пользователь
+        if (this.token && this.user) {
+            // Если пользователь авторизован и находится на странице профиля
+            if (window.location.pathname.includes('profile.html')) {
+                // На странице профиля - ничего не делаем, разрешаем стандартное поведение
+                // (или можно добавить кнопку выхода отдельно на странице профиля)
+                return true;
+            } else {
+                // На других страницах - разрешаем переход на профиль
+                // Не отменяем событие, позволяем переходу по ссылке
+                link.onclick = null; // Убираем обработчик
+                return true; // Разрешаем стандартное поведение браузера
+            }
+        } else {
+            // Если пользователь не авторизован - показываем модальное окно входа
+            e.preventDefault();
+            this.openModal('login');
+        }
+    }
+    
+    async checkAuthState() {
+        console.log('Checking auth state...');
+        
+        const userData = localStorage.getItem('user_data');
+        
+        if (!this.token || !userData) {
+            console.log('No token or user data found');
+            this.updateNavForGuest();
+            return;
+        }
+        
+        try {
+            this.user = JSON.parse(userData);
+            console.log('User from localStorage:', this.user);
+            
+            // Обновляем интерфейс для авторизованного пользователя
+            this.updateNavForUser(this.user);
+            
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+            this.updateNavForGuest();
+        }
+    }
+    
+    async validateToken() {
+        if (!this.token || !this.user) return;
+        
+        try {
+            const response = await fetch('/api/user', {
+                headers: { 
+                    'Authorization': `Bearer ${this.token}` 
+                }
+            });
+            
+            if (!response.ok) {
+                // Токен невалидный
+                this.updateNavForGuest();
+            }
+        } catch (error) {
+            console.warn('Ошибка проверки токена:', error);
+            // Оставляем пользователя авторизованным при ошибке сети
+        }
+    }
+    
+    openModal(modalType) {
+        const modal = this.modals[modalType];
+        if (!modal) {
+            console.warn(`Modal ${modalType} not found`);
+            return;
+        }
+        
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
     
-    function closeModal(modal) {
+    closeModal(modalType) {
+        const modal = this.modals[modalType];
+        if (!modal) return;
+        
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
+        
+        // Очищаем ошибки
+        this.clearFormErrors(modalType);
     }
     
-    // Обработчики для открытия модальных окон (только для неавторизованных пользователей)
-    signinLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            // Проверяем, авторизован ли пользователь
-            const userData = localStorage.getItem('user_data');
-            
-            if (userData) {
-                // Если пользователь авторизован - переходим на профиль
-                const user = JSON.parse(userData);
-                window.location.href = 'profile.html';
-            } else {
-                // Если не авторизован - открываем окно входа
-                openModal(loginModal);
-            }
-        });
-    });
+    switchModal(fromModal, toModal) {
+        this.closeModal(fromModal);
+        this.openModal(toModal);
+    }
     
-    // Закрытие модальных окон
-    closeLoginModal.addEventListener('click', () => closeModal(loginModal));
-    closeRegisterModal.addEventListener('click', () => closeModal(registerModal));
-    cancelLoginBtn.addEventListener('click', () => closeModal(loginModal));
-    cancelRegisterBtn.addEventListener('click', () => closeModal(registerModal));
-    
-    // Переключение между модальными окнами
-    showRegisterModalLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        closeModal(loginModal);
-        openModal(registerModal);
-    });
-    
-    showLoginModalLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        closeModal(registerModal);
-        openModal(loginModal);
-    });
+    clearFormErrors(modalType) {
+        const errorElements = modalType === 'login' 
+            ? document.querySelectorAll('#loginModal .error-message')
+            : document.querySelectorAll('#registerModal .error-message');
+        
+        errorElements.forEach(el => el.textContent = '');
+    }
     
     // Валидация форм
-    function validateLoginForm() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
+    validateLoginForm() {
+        const email = document.getElementById('loginEmail')?.value;
+        const password = document.getElementById('loginPassword')?.value;
         let isValid = true;
     
-        document.getElementById('loginEmailError').textContent = '';
-        document.getElementById('loginPasswordError').textContent = '';
+        const emailError = document.getElementById('loginEmailError');
+        const passwordError = document.getElementById('loginPasswordError');
+        
+        if (emailError) emailError.textContent = '';
+        if (passwordError) passwordError.textContent = '';
         
         if (!email) {
-            document.getElementById('loginEmailError').textContent = 'Введите email';
+            if (emailError) emailError.textContent = 'Введите email';
             isValid = false;
-        } else if (!validateEmail(email)) {
-            document.getElementById('loginEmailError').textContent = 'Введите корректный email';
+        } else if (!this.validateEmail(email)) {
+            if (emailError) emailError.textContent = 'Введите корректный email';
             isValid = false;
         }
         
         if (!password) {
-            document.getElementById('loginPasswordError').textContent = 'Введите пароль';
+            if (passwordError) passwordError.textContent = 'Введите пароль';
             isValid = false;
         } else if (password.length < 6) {
-            document.getElementById('loginPasswordError').textContent = 'Пароль должен содержать минимум 6 символов';
+            if (passwordError) passwordError.textContent = 'Пароль должен содержать минимум 6 символов';
             isValid = false;
         }
         
         return isValid;
     }
     
-    function validateRegisterForm() {
-        const name = document.getElementById('regName').value;
-        const phone = document.getElementById('regPhone').value;
-        const email = document.getElementById('regEmail').value;
-        const password = document.getElementById('regPassword').value;
-        const confirmPassword = document.getElementById('regConfirmPassword').value;
+    validateRegisterForm() {
+        const name = document.getElementById('regName')?.value;
+        const phone = document.getElementById('regPhone')?.value;
+        const email = document.getElementById('regEmail')?.value;
+        const password = document.getElementById('regPassword')?.value;
+        const confirmPassword = document.getElementById('regConfirmPassword')?.value;
         let isValid = true;
         
-        document.getElementById('regNameError').textContent = '';
-        document.getElementById('regPhoneError').textContent = '';
-        document.getElementById('regEmailError').textContent = '';
-        document.getElementById('regPasswordError').textContent = '';
-        document.getElementById('regConfirmPasswordError').textContent = '';
+        const errors = {
+            name: document.getElementById('regNameError'),
+            phone: document.getElementById('regPhoneError'),
+            email: document.getElementById('regEmailError'),
+            password: document.getElementById('regPasswordError'),
+            confirmPassword: document.getElementById('regConfirmPasswordError')
+        };
+        
+        // Очищаем ошибки
+        Object.values(errors).forEach(el => {
+            if (el) el.textContent = '';
+        });
         
         if (!name) {
-            document.getElementById('regNameError').textContent = 'Введите имя';
+            if (errors.name) errors.name.textContent = 'Введите имя';
             isValid = false;
         }
         
         if (!email) {
-            document.getElementById('regEmailError').textContent = 'Введите email';
+            if (errors.email) errors.email.textContent = 'Введите email';
             isValid = false;
-        } else if (!validateEmail(email)) {
-            document.getElementById('regEmailError').textContent = 'Введите корректный email';
+        } else if (!this.validateEmail(email)) {
+            if (errors.email) errors.email.textContent = 'Введите корректный email';
             isValid = false;
         }
         
         if (!password) {
-            document.getElementById('regPasswordError').textContent = 'Введите пароль';
+            if (errors.password) errors.password.textContent = 'Введите пароль';
             isValid = false;
         } else if (password.length < 6) {
-            document.getElementById('regPasswordError').textContent = 'Пароль должен содержать минимум 6 символов';
+            if (errors.password) errors.password.textContent = 'Пароль должен содержать минимум 6 символов';
             isValid = false;
         }
         
         if (!confirmPassword) {
-            document.getElementById('regConfirmPasswordError').textContent = 'Подтвердите пароль';
+            if (errors.confirmPassword) errors.confirmPassword.textContent = 'Подтвердите пароль';
             isValid = false;
         } else if (password !== confirmPassword) {
-            document.getElementById('regConfirmPasswordError').textContent = 'Пароли не совпадают';
+            if (errors.confirmPassword) errors.confirmPassword.textContent = 'Пароли не совпадают';
             isValid = false;
         }
         
         if (!phone) {
-            document.getElementById('regPhoneError').textContent = 'Введите номер телефона';
+            if (errors.phone) errors.phone.textContent = 'Введите номер телефона';
             isValid = false;
         } else if (phone.length < 11 || phone.length > 12) {
-            document.getElementById('regPhoneError').textContent = 'Длина номера должна быть от 11 до 12 цифр';
+            if (errors.phone) errors.phone.textContent = 'Длина номера должна быть от 11 до 12 цифр';
             isValid = false;
         }
         
         return isValid;
     }
     
-    function validateEmail(email) {
+    validateEmail(email) {
         const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return re.test(email);
     }
     
-    function showSuccessMessage(message) {
-        const successMsg = document.createElement('div');
-        successMsg.className = 'success-message';
-        successMsg.textContent = message;
-        document.body.appendChild(successMsg);
+    async doLogin() {
+        if (!this.validateLoginForm()) return;
         
-        setTimeout(() => {
-            successMsg.remove();
-        }, 3000);
-    }
-    
-    // Вход пользователя
-    confirmLoginBtn.addEventListener('click', async function() {
-        if (!validateLoginForm()) return;
-        
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
+        const email = document.getElementById('loginEmail')?.value;
+        const password = document.getElementById('loginPassword')?.value;
+        const errorElement = document.getElementById('loginPasswordError');
         
         try {
-            const result = await loginUser(email, password);
+            const result = await this.loginUser(email, password);
             
             if (result.success) {
-                closeModal(loginModal);
-                showSuccessMessage('Вы успешно вошли в систему!');
+                this.closeModal('login');
+                this.showSuccessMessage('Вы успешно вошли в систему!');
                 
                 // Сохраняем данные пользователя
+                this.token = result.token;
+                this.user = result.user;
                 localStorage.setItem('auth_token', result.token);
+                localStorage.setItem('token', result.token);
                 localStorage.setItem('user_data', JSON.stringify(result.user));
                 
                 // Обновляем интерфейс
-                updateUIAfterLogin(result.user);
+                this.updateNavForUser(result.user);
                 
                 // Перенаправляем на профиль
                 setTimeout(() => {
-                    window.location.href = 'profile.html';
+                    if (window.location.pathname.includes('profile.html')) {
+                        window.location.reload();
+                    } else {
+                        window.location.href = 'profile.html';
+                    }
                 }, 1000);
             } else {
-                document.getElementById('loginPasswordError').textContent = result.error;
+                if (errorElement) {
+                    errorElement.textContent = result.error;
+                }
             }
         } catch (error) {
             console.error('Ошибка входа:', error);
-            document.getElementById('loginPasswordError').textContent = 'Ошибка входа. Попробуйте снова.';
+            if (errorElement) {
+                errorElement.textContent = 'Ошибка входа. Попробуйте снова.';
+            }
         }
-    });
+    }
     
-    // Регистрация пользователя
-    confirmRegisterBtn.addEventListener('click', async function() {
-        if (!validateRegisterForm()) return;
+    async doRegister() {
+        if (!this.validateRegisterForm()) return;
         
-        const name = document.getElementById('regName').value;
-        const phone = document.getElementById('regPhone').value;
-        const email = document.getElementById('regEmail').value;
-        const password = document.getElementById('regPassword').value;
+        const name = document.getElementById('regName')?.value;
+        const phone = document.getElementById('regPhone')?.value;
+        const email = document.getElementById('regEmail')?.value;
+        const password = document.getElementById('regPassword')?.value;
+        const errorElement = document.getElementById('regEmailError');
         
         try {
-            const result = await registerUser(name, phone, email, password);
+            const result = await this.registerUser(name, phone, email, password);
             
             if (result.success) {
-                closeModal(registerModal);
-                showSuccessMessage('Регистрация прошла успешно! Теперь вы можете войти.');
+                this.closeModal('register');
+                this.showSuccessMessage('Регистрация прошла успешно! Теперь вы можете войти.');
                 
                 // Автоматически входим после регистрации
-                const loginResult = await loginUser(email, password);
+                const loginResult = await this.loginUser(email, password);
                 
                 if (loginResult.success) {
+                    this.token = loginResult.token;
+                    this.user = loginResult.user;
                     localStorage.setItem('auth_token', loginResult.token);
+                    localStorage.setItem('token', loginResult.token);
                     localStorage.setItem('user_data', JSON.stringify(loginResult.user));
                     
-                    updateUIAfterLogin(loginResult.user);
+                    this.updateNavForUser(loginResult.user);
                     
                     // Перенаправляем на профиль
                     setTimeout(() => {
@@ -222,35 +414,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, 1500);
                 }
             } else {
-                document.getElementById('regEmailError').textContent = result.error;
+                if (errorElement) {
+                    errorElement.textContent = result.error;
+                }
             }
         } catch (error) {
             console.error('Ошибка регистрации:', error);
-            document.getElementById('regEmailError').textContent = 'Ошибка регистрации. Попробуйте снова.';
+            if (errorElement) {
+                errorElement.textContent = 'Ошибка регистрации. Попробуйте снова.';
+            }
         }
-    });
-    
-    // Обработка Enter в формах
-    document.getElementById('loginEmail').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            confirmLoginBtn.click();
-        }
-    });
-    
-    document.getElementById('loginPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            confirmLoginBtn.click();
-        }
-    });
-    
-    document.getElementById('regConfirmPassword').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            confirmRegisterBtn.click();
-        }
-    });
+    }
     
     // API функции
-    async function loginUser(email, password) {
+    async loginUser(email, password) {
         try {
             const response = await fetch('/api/login', {
                 method: 'POST',
@@ -284,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    async function registerUser(name, phone, email, password) {
+    async registerUser(name, phone, email, password) {
         try {
             const response = await fetch('/api/register', {
                 method: 'POST',
@@ -317,145 +494,237 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Функции управления интерфейсом
-    function updateUIAfterLogin(user) {
-        updateUIForLoggedInUser(user);
-    }
-    
-    function updateUIForLoggedInUser(user) {
-        const signinLink = document.getElementById('signinLink');
-        if (signinLink) {
-            // Обновляем ссылку на профиль
-            signinLink.textContent = user.name;
-            signinLink.href = 'profile.html';
-            
-            // Убираем старый обработчик и добавляем новый для перехода на профиль
-            signinLink.onclick = function(e) {
-                // Не отменяем действие по умолчанию - переход по ссылке
-                // e.preventDefault(); // УБИРАЕМ эту строку!
-            };
-            
-            // Обновляем навигацию для администратора
-            updateNavigationForRole(user.role);
-        }
-    }
-    
-    function updateNavigationOnLogout() {
-        const signinLink = document.getElementById('signinLink');
-        if (signinLink) {
-            // Возвращаем ссылку "Войти" с открытием модального окна
-            signinLink.textContent = 'Войти';
-            signinLink.href = '#';
-            signinLink.onclick = function(e) {
-                e.preventDefault();
-                openModal(loginModal);
-            };
-            
-            // Скрываем ссылку "Пользователи" для админов
-            const usersLink = document.querySelector('#navMenu a[href="users.html"]');
-            if (usersLink && usersLink.closest('li')) {
-                usersLink.closest('li').remove();
-            }
-        }
-    }
-    
-    function updateNavigationForRole(role) {
-        const navMenu = document.querySelector('.nav-menu');
-        if (!navMenu) return;
+    updateNavForGuest() {
+        console.log('Updating nav for guest');
         
-        const usersLink = document.querySelector('#navMenu a[href="users.html"]');
-        
-        if (role === 'Администратор') {
-            // Если ссылки "Пользователи" нет - добавляем
-            if (!usersLink) {
-                const usersItem = document.createElement('li');
-                usersItem.innerHTML = '<a href="users.html">Пользователи</a>';
-                
-                // Находим элемент "Войти" и добавляем перед ним
-                const signinItem = document.querySelector('#navMenu li:has(#signinLink)');
-                if (signinItem) {
-                    signinItem.parentNode.insertBefore(usersItem, signinItem);
-                } else {
-                    // Если не нашли, добавляем в конец
-                    navMenu.appendChild(usersItem);
-                }
-            }
-        } else {
-            // Если пользователь не админ - удаляем ссылку "Пользователи"
-            if (usersLink && usersLink.closest('li')) {
-                usersLink.closest('li').remove();
-            }
-        }
-    }
-    
-    // Выход из системы (вызывается только из профиля)
-    window.logoutUser = function() {
-        const token = localStorage.getItem('auth_token');
-        
-        if (token) {
-            fetch('/api/logout', {
-                method: 'POST',
-                headers: { 
-                    'Authorization': `Bearer ${token}` 
-                }
-            }).catch(error => {
-                console.error('Ошибка при выходе:', error);
-            });
-        }
-        
-        // Очищаем localStorage
+        // Очищаем данные
+        this.token = null;
+        this.user = null;
+        localStorage.removeItem('token');
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_data');
         
-        // Обновляем навигацию
-        updateNavigationOnLogout();
+        // Обновляем ссылки входа
+        this.signinLinks.forEach(link => {
+            if (link) {
+                link.textContent = 'Войти';
+                link.href = '#';
+                // Убираем старые обработчики
+                link.removeEventListener('click', this.handleSignInClick);
+                // Добавляем новый обработчик
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.openModal('login');
+                });
+            }
+        });
         
-        // Перенаправляем на главную страницу
-        window.location.href = 'index.html';
-    };
+        // Скрываем все админские вкладки
+        this.hideAdminTabs();
+        
+        // Удаляем ссылку "Пользователи" из навигации
+        this.removeAdminNavigation();
+    }
     
-    // Проверка авторизации при загрузке страницы
-    function checkAuth() {
-        const token = localStorage.getItem('auth_token');
-        const userData = localStorage.getItem('user_data');
-    
-        if (token && userData) {
-            const user = JSON.parse(userData);
-            
-            // Обновляем интерфейс
-            updateUIForLoggedInUser(user);
-            updateNavigationForRole(user.role);
-            updateAllUserLinks(user.role);
-            
-            // Проверяем валидность токена на сервере
-            fetch('/api/user', {
-                headers: { 
-                    'Authorization': `Bearer ${token}` 
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    // Токен невалидный, удаляем из localStorage
-                    localStorage.removeItem('auth_token');
-                    localStorage.removeItem('user_data');
-                    updateNavigationOnLogout();
-                }
-            })
-            .catch(() => {
-                // Ошибка соединения, но оставляем пользователя
-                console.warn('Ошибка проверки токена, но пользователь остается авторизованным');
-            });
+    updateNavForUser(user) {
+        console.log('Updating nav for user:', user);
+        
+        // Обновляем ссылки входа
+        this.signinLinks.forEach(link => {
+            if (link) {
+                const userName = user.name || user.username || 'Профиль';
+                link.textContent = userName;
+                link.href = 'profile.html';
+                
+                // Убираем старые обработчики
+                link.removeEventListener('click', this.handleSignInClick);
+                
+                // Добавляем обработчик, который не мешает переходу на профиль
+                link.addEventListener('click', (e) => this.handleSignInClick(e, link));
+                
+                // Также добавляем отдельную кнопку для выхода (опционально)
+                this.addLogoutButtonIfNeeded();
+            }
+        });
+        
+        // Проверяем, является ли пользователь администратором
+        const isAdmin = this.isUserAdmin(user);
+        console.log('Is user admin?', isAdmin);
+        
+        // Показываем или скрываем админские вкладки и навигацию
+        if (isAdmin) {
+            this.showAdminTabs();
+            this.addAdminNavigation();
         } else {
-            // Если пользователь не авторизован, убеждаемся что навигация корректна
-            updateNavigationOnLogout();
+            this.hideAdminTabs();
+            this.removeAdminNavigation();
         }
     }
     
+    // Добавляем отдельную кнопку выхода на странице профиля
+    addLogoutButtonIfNeeded() {
+        if (!window.location.pathname.includes('profile.html')) return;
+        
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (!logoutBtn) {
+            // Создаем кнопку выхода на странице профиля
+            const profileContainer = document.querySelector('.profile-container');
+            if (profileContainer) {
+                const logoutButton = document.createElement('button');
+                logoutButton.id = 'logoutBtn';
+                logoutButton.className = 'btn btn-danger';
+                logoutButton.textContent = 'Выйти из системы';
+                logoutButton.style.marginTop = '20px';
+                logoutButton.addEventListener('click', () => this.logout());
+                profileContainer.appendChild(logoutButton);
+            }
+        }
+    }
+    
+    isUserAdmin(user) {
+        if (!user) return false;
+        
+        console.log('Checking admin status for user:', user);
+        
+        // Проверяем разными способами
+        const roleName = (user.role || user.Role_Name || '').toLowerCase();
+        const roleId = user.role_id || user.Role_ID;
+        
+        console.log('Role name:', roleName);
+        console.log('Role ID:', roleId);
+        
+        // Различные варианты названия роли администратора
+        const isAdmin = roleName.includes('админ') || 
+                       roleName.includes('admin') ||
+                       roleName === 'администратор' ||
+                       roleName === 'administrator' ||
+                       roleId === 1;
+        
+        return isAdmin;
+    }
+    
+    showAdminTabs() {
+        console.log('Showing admin tabs');
+        
+        const adminTabIds = [
+            'carsTabItem',     // Управление авто
+            'usersTabItem',    // Пользователи
+            'newsTabItem'      // Управление новостями
+        ];
+        
+        adminTabIds.forEach(tabId => {
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                tab.style.display = 'block';
+                console.log(`Tab ${tabId} shown`);
+            }
+        });
+    }
+    
+    hideAdminTabs() {
+        console.log('Hiding admin tabs');
+        
+        const adminTabIds = [
+            'carsTabItem',
+            'usersTabItem', 
+            'newsTabItem'
+        ];
+        
+        adminTabIds.forEach(tabId => {
+            const tab = document.getElementById(tabId);
+            if (tab) {
+                tab.style.display = 'none';
+            }
+        });
+    }
+    
+    addAdminNavigation() {
+        const navMenu = document.querySelector('.nav-menu');
+        if (!navMenu) return;
+        
+        // Проверяем, есть ли уже ссылка "Пользователи"
+        const existingUsersLink = document.querySelector('.nav-menu a[href="users.html"]');
+        if (existingUsersLink) return;
+        
+        // Добавляем ссылку "Пользователи"
+        const usersItem = document.createElement('li');
+        usersItem.innerHTML = '<a href="users.html">Пользователи</a>';
+        
+        // Находим элемент "Войти" и добавляем перед ним
+        const signinItem = this.signinLinks[0]?.closest('li');
+        if (signinItem && signinItem.parentNode) {
+            signinItem.parentNode.insertBefore(usersItem, signinItem);
+        } else {
+            navMenu.appendChild(usersItem);
+        }
+    }
+    
+    removeAdminNavigation() {
+        // Удаляем ссылку "Пользователи" из навигации
+        const usersLink = document.querySelector('.nav-menu a[href="users.html"]');
+        if (usersLink && usersLink.closest('li')) {
+            usersLink.closest('li').remove();
+        }
+    }
+    
+    async logout() {
+        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        
+        if (token) {
+            try {
+                await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${token}` 
+                    }
+                });
+            } catch (error) {
+                console.error('Ошибка при выходе:', error);
+            }
+        }
+        
+        // Очищаем данные
+        this.token = null;
+        this.user = null;
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_data');
+        
+        // Обновляем навигацию
+        this.updateNavForGuest();
+        
+        // Показываем уведомление
+        this.showSuccessMessage('Выход выполнен');
+        
+        // Перенаправляем на главную страницу
+        setTimeout(() => {
+            if (!window.location.pathname.includes('index.html') && 
+                !window.location.pathname.endsWith('/')) {
+                window.location.href = 'index.html';
+            } else {
+                window.location.reload();
+            }
+        }, 1000);
+    }
+    
+    showSuccessMessage(message) {
+        const successMsg = document.createElement('div');
+        successMsg.className = 'success-message';
+        successMsg.textContent = message;
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+            successMsg.remove();
+        }, 3000);
+    }
+    
     // Глобальные функции для работы с избранным
-    window.addToFavorites = function(carId) {
+    static addToFavorites(carId) {
         if (!localStorage.getItem('auth_token')) {
             alert('Для добавления в избранное необходимо войти в систему');
-            openModal(loginModal);
+            if (window.signInView) {
+                window.signInView.openModal('login');
+            }
             return false;
         }
         
@@ -478,14 +747,13 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem(`favorites_${user.id}`, JSON.stringify(favorites));
         
         // Пробуем сохранить на сервере
-        saveFavoriteToServer(carId);
+        SignInView.saveFavoriteToServer(carId);
         
         alert('Автомобиль добавлен в избранное!');
         return true;
-    };
+    }
     
-    // Сохранение избранного на сервере
-    async function saveFavoriteToServer(carId) {
+    static async saveFavoriteToServer(carId) {
         const token = localStorage.getItem('auth_token');
         if (!token) return false;
         
@@ -505,132 +773,31 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     }
-
-
-    function updateNavigationForRole(role) {
-    const usersTabItem = document.getElementById('usersTabItem');
-    const carsTabItem=document.getElementById('carsTabItem');
-    
-    if (usersTabItem) {
-        if (role === 'Администратор') {
-            usersTabItem.style.display = 'block';
-        } else {
-            usersTabItem.style.display = 'none';
-        }
-    }
-
-    if(carsTabItem){
-        if(role==='Администратор'){
-            carsTabItem.style.display='block';
-        }else{
-            carsTabItem.style.display='none';
-        }
-    }
-
-
 }
 
-function updateAllUserLinks(role) {
-    const isAdmin = role === 'Администратор';
-    const selectors = [
-        '#usersTabItem',
-        '#adminUsersLink',
-        '.nav-menu a[href="users.html"]'
-    ];
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Page loaded, initializing SignInView');
+    window.signInView = new SignInView();
     
-    selectors.forEach(selector => {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach(element => {
-            const li = element.closest('li') || element;
-            if (isAdmin) {
-                li.style.display = 'block';
-            } else {
-                li.style.display = 'none';
-            }
-        });
-    });
-}
-    async function updateNav() {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-        // Не авторизован
-        showTabItems(false, false, false);
-        return;
-    }
-    
-    try {
-        const response = await fetch('/api/user', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            
-            if (data.success) {
-                const user = data.user;
-                
-                // Проверка роли (несколько возможных вариантов)
-                const isAdmin = user.role === 'Администратор' || 
-                               user.role === 'admin' || 
-                               user.role === 'Administrator' ||
-                               user.role_id === 1;
-                
-                // Отображаем соответствующие пункты меню
-                showTabItems(isAdmin, isAdmin, isAdmin);
-                const newsTabItem = document.getElementById('newsTabItem');
-if (newsTabItem && user.role === 'Администратор') {
-    newsTabItem.style.display = 'block';
-} else if (newsTabItem) {
-    newsTabItem.style.display = 'none';
-}
-                
-                // Обновляем кнопку входа/выхода
-                const signinLink = document.getElementById('signinLink');
-                if (signinLink) {
-                    signinLink.textContent = 'Выйти';
-                    signinLink.href = '#';
-                    signinLink.onclick = logoutUser;
-                }
-            } else {
-                // Не удалось получить данные пользователя
-                localStorage.removeItem('token');
-                showTabItems(false, false, false);
-            }
-        } else {
-            // Ошибка авторизации
-            localStorage.removeItem('token');
-            showTabItems(false, false, false);
-        }
-    } catch (error) {
-        console.error('Ошибка проверки авторизации:', error);
-        localStorage.removeItem('token');
-        showTabItems(false, false, false);
-    }
-}
-    function showTabItems(showCars, showUsers, showNews) {
-    const carsTabItem = document.getElementById('carsTabItem');
-    const usersTabItem = document.getElementById('usersTabItem');
-    const newsTabItem = document.getElementById('newsTabItem');
-    
-    if (carsTabItem) {
-        carsTabItem.style.display = showCars ? 'block' : 'none';
-    }
-    
-    if (usersTabItem) {
-        usersTabItem.style.display = showUsers ? 'block' : 'none';
-    }
-    
-    if (newsTabItem) {
-        newsTabItem.style.display = showNews ? 'block' : 'none';
-    }
-    }
-
-    // Вызов при загрузке страницы
-    document.addEventListener('DOMContentLoaded', updateNav);
-    
-    
-    checkAuth();
+    // Регистрируем глобальные функции
+    window.addToFavorites = SignInView.addToFavorites;
+    window.logoutUser = () => window.signInView?.logout();
 });
+
+// Глобальные функции для отладки
+window.debugAuth = function() {
+    console.log('=== Auth Debug ===');
+    console.log('Token:', localStorage.getItem('token'));
+    console.log('Auth Token:', localStorage.getItem('auth_token'));
+    console.log('User Data:', localStorage.getItem('user_data'));
+    console.log('SignInView instance:', window.signInView);
+    console.log('Signin links:', document.querySelectorAll('#signinLink, .nav-menu a[href="signin.html"]').length);
+    
+    // Проверяем все элементы навигации
+    const navItems = ['carsTabItem', 'usersTabItem', 'newsTabItem'];
+    navItems.forEach(id => {
+        const el = document.getElementById(id);
+        console.log(`${id}:`, el ? 'found' : 'not found', 'display:', el?.style.display);
+    });
+};
