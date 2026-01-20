@@ -1,5 +1,4 @@
-// CarView.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
-
+// CarView.js - ВЕРСИЯ С ИСПРАВЛЕННЫМ ИЗБРАННЫМ
 class CarView {
     constructor() {
         // Элементы DOM
@@ -25,6 +24,10 @@ class CarView {
         this.filteredCars = [];
         this.currentFilters = {};
         
+        // Добавим данные о пользователе и избранном
+        this.currentUser = null;
+        this.favoriteCars = new Set();
+        
         // Добавим отладочный лог
         console.log('CarView инициализирован');
         
@@ -35,8 +38,16 @@ class CarView {
     async init() {
         console.log('Инициализация CarView...');
         
+        // Загружаем информацию о пользователе
+        this.loadUserData();
+        
         // Загружаем автомобили
         await this.loadCars();
+        
+        // Если пользователь авторизован, загружаем его избранное
+        if (this.currentUser) {
+            await this.loadUserFavorites();
+        }
         
         // Инициализируем фильтры
         this.initFilters();
@@ -45,13 +56,55 @@ class CarView {
         this.setupEventListeners();
     }
     
-    // Загрузка автомобилей из API - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    // Загрузка данных пользователя
+    loadUserData() {
+        try {
+            const userData = localStorage.getItem('user_data');
+            if (userData) {
+                this.currentUser = JSON.parse(userData);
+                console.log('Пользователь загружен:', this.currentUser);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки данных пользователя:', error);
+        }
+    }
+    
+    // Загрузка избранного пользователя
+    async loadUserFavorites() {
+        try {
+            const token = localStorage.getItem('auth_token');
+            if (!token || !this.currentUser) return;
+            
+            const response = await fetch('/api/user/favorites', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                console.warn('Не удалось загрузить избранное');
+                return;
+            }
+            
+            const data = await response.json();
+            if (data.success && data.favorites) {
+                // Сохраняем ID избранных автомобилей
+                data.favorites.forEach(car => {
+                    this.favoriteCars.add(car.id);
+                });
+                console.log('Избранное загружено:', this.favoriteCars);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки избранного:', error);
+        }
+    }
+    
+    // Загрузка автомобилей из API
     async loadCars() {
         try {
             console.log('Начинаем загрузку автомобилей...');
             this.showLoading(true);
             
-            // Используем более простой запрос
             const apiUrl = '/api/cars';
             console.log('Запрос к:', apiUrl);
             
@@ -67,10 +120,6 @@ class CarView {
             console.log('Данные ответа:', data);
             
             if (data.success) {
-                // Проверяем структуру данных
-                console.log('Количество машин в data.cars:', data.cars ? data.cars.length : 'undefined');
-                
-                // Важно: data.cars может быть undefined или пустым массивом
                 this.allCars = data.cars || [];
                 this.filteredCars = [...this.allCars];
                 
@@ -127,10 +176,9 @@ class CarView {
         }
     }
     
-    // Отображение автомобилей - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    // Отображение автомобилей
     displayCars(cars) {
         console.log('displayCars вызван с', cars ? cars.length : 'undefined', 'автомобилями');
-        console.log('carsGrid элемент:', this.carsGrid);
         
         if (!this.carsGrid) {
             console.error('Элемент carsGrid не найден!');
@@ -149,15 +197,11 @@ class CarView {
             this.carsGrid.innerHTML = `
                 <div class="no-results">
                     <h3>Автомобили не найдены</h3>
-                    <button class="btn" onclick="carView.loadCars()">Попробовать снова</button>
+                    <button class="btn" onclick="window.carView.loadCars()">Попробовать снова</button>
                 </div>
             `;
             return;
         }
-        
-        // Проверяем структуру данных первого автомобиля
-        console.log('Первый автомобиль для проверки:', cars[0]);
-        console.log('Ключи первого автомобиля:', cars[0] ? Object.keys(cars[0]) : 'нет данных');
         
         // Создаем HTML
         let html = '';
@@ -166,13 +210,11 @@ class CarView {
             html += this.createCarCard(car);
         }
         
-        console.log('Созданный HTML (первые 500 символов):', html.substring(0, 500));
-        
         // Вставляем в DOM
         this.carsGrid.innerHTML = html;
     }
     
-    // Создание карточки автомобиля - ИСПРАВЛЕННАЯ ВЕРСИЯ
+    // Создание карточки автомобиля С ИЗБРАННЫМ
     createCarCard(car) {
         console.log('Создание карточки для:', car);
         
@@ -196,6 +238,9 @@ class CarView {
         const status = car.status || car.Status || '';
         const imageUrl = car.image_url || car.Image_url || 'https://via.placeholder.com/300x200?text=Нет+фото';
         
+        // Проверяем, в избранном ли автомобиль
+        const isFavorite = this.favoriteCars.has(parseInt(id));
+        
         // Форматируем цену
         const formattedPrice = price ? new Intl.NumberFormat('ru-RU').format(price) : 'Цена не указана';
         
@@ -210,6 +255,16 @@ class CarView {
                          alt="${brand} ${model}"
                          onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=Ошибка+загрузки';">
                     ${status ? `<span class="car-badge">${status}</span>` : ''}
+                    
+                    <!-- Кнопка избранного -->
+                    <button class="favorite-btn ${isFavorite ? 'active' : ''}" 
+                            onclick="window.carView.toggleFavorite(${id}, '${brand} ${model}', this)"
+                            title="${isFavorite ? 'Удалить из избранного' : 'Добавить в избранное'}">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="${isFavorite ? '#ff4757' : 'none'}" 
+                             stroke="${isFavorite ? '#ff4757' : '#666'}" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                    </button>
                 </div>
                 <div class="car-info">
                     <h3 class="car-title">${brand} ${model}</h3>
@@ -224,16 +279,211 @@ class CarView {
                         <span class="spec-item">${formattedMileage}</span>
                     </div>
                     <div class="car-footer">
-                <div class="car-price">${formattedPrice} ₽</div>
-                <button class="btn btn-small view-details" data-id="${id}" onclick="window.location.href='car-details.html?id=${id}'">
-                    Подробнее
-                </button>
-            </div>
+                        <div class="car-price">${formattedPrice} ₽</div>
+                        <button class="btn btn-small view-details" data-id="${id}" 
+                                onclick="window.carView.viewCarDetails(${id})">
+                            Подробнее
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
-
+    }
+    
+    // Переключение избранного
+    async toggleFavorite(carId, carName, button) {
+        // Проверяем авторизацию
+        if (!this.currentUser) {
+            this.showLoginPrompt();
+            return;
+        }
         
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            this.showLoginPrompt();
+            return;
+        }
+        
+        const isCurrentlyFavorite = this.favoriteCars.has(carId);
+        
+        try {
+            if (isCurrentlyFavorite) {
+                // Удаляем из избранного
+                const response = await fetch(`/api/user/favorites/${carId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.favoriteCars.delete(carId);
+                    this.updateFavoriteButton(button, false);
+                    this.showNotification(`"${carName}" удален из избранного`, 'success');
+                } else {
+                    this.showNotification('Ошибка удаления из избранного', 'error');
+                }
+            } else {
+                // Добавляем в избранное
+                const response = await fetch('/api/user/favorites', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ carId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.favoriteCars.add(carId);
+                    this.updateFavoriteButton(button, true);
+                    this.showNotification(`"${carName}" добавлен в избранное`, 'success');
+                } else {
+                    this.showNotification('Ошибка добавления в избранное', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка переключения избранного:', error);
+            this.showNotification('Ошибка сети. Попробуйте позже.', 'error');
+        }
+    }
+    
+    // Обновление кнопки избранного
+    updateFavoriteButton(button, isFavorite) {
+        const svg = button.querySelector('svg');
+        if (svg) {
+            svg.style.fill = isFavorite ? '#ff4757' : 'none';
+            svg.style.stroke = isFavorite ? '#ff4757' : '#666';
+        }
+        
+        // Добавляем/убираем класс active
+        if (isFavorite) {
+            button.classList.add('active');
+            button.title = 'Удалить из избранного';
+        } else {
+            button.classList.remove('active');
+            button.title = 'Добавить в избранное';
+        }
+        
+        // Анимация
+        button.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            button.style.transform = 'scale(1)';
+        }, 300);
+    }
+    
+    // Показать предложение войти
+    showLoginPrompt() {
+        const modal = document.getElementById('loginModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            return;
+        }
+        
+        // Если модального окна нет, показываем алерт
+        if (confirm('Чтобы добавить в избранное, нужно войти в систему. Перейти к авторизации?')) {
+            window.location.href = 'index.html#login';
+        }
+    }
+    
+    // Показать уведомление
+    showNotification(message, type = 'success') {
+        // Создаем элемент уведомления
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button class="notification-close">&times;</button>
+        `;
+        
+        // Стили для уведомления
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+            color: white;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 300px;
+            max-width: 500px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        // Кнопка закрытия
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.remove();
+        });
+        
+        // Добавляем в DOM
+        document.body.appendChild(notification);
+        
+        // Автоматическое удаление через 5 секунд
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+        
+        // Добавляем CSS анимации если их нет
+        if (!document.getElementById('notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+                .notification-close {
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 20px;
+                    cursor: pointer;
+                    margin-left: 15px;
+                    line-height: 1;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+    }
+    
+    // Обновить избранное при авторизации
+    updateFavoritesOnLogin() {
+        this.loadUserData();
+        if (this.currentUser) {
+            this.loadUserFavorites().then(() => {
+                // Перерисовываем автомобили с обновленным статусом избранного
+                this.displayCars(this.filteredCars);
+            });
+        }
     }
     
     // Обновление опций фильтров
@@ -609,7 +859,7 @@ class CarView {
             <div class="error-message">
                 <h3>Ошибка</h3>
                 <p>${message}</p>
-                <button class="btn btn-small" onclick="carView.loadCars()">
+                <button class="btn btn-small" onclick="window.carView.loadCars()">
                     Попробовать снова
                 </button>
             </div>
@@ -622,3 +872,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, инициализируем CarView...');
     window.carView = new CarView();
 });
+
+// Глобальная функция для обновления избранного после входа
+window.updateCarFavorites = function() {
+    if (window.carView) {
+        window.carView.updateFavoritesOnLogin();
+    }
+};

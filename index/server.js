@@ -789,11 +789,13 @@ app.post('/api/user/favorites', requireAuth, async (req, res) => {
             });
         }
         
-        // Здесь можно сохранить в БД (нужно добавить таблицу Favorites)
-        // Пока просто возвращаем успех
+        // Добавляем в избранное
+        const result = await db.addToFavorites(req.user.ID, carId);
+        
         res.json({
             success: true,
-            message: 'Автомобиль добавлен в избранное'
+            message: 'Автомобиль добавлен в избранное',
+            added: result.changes > 0
         });
         
     } catch (error) {
@@ -807,16 +809,27 @@ app.post('/api/user/favorites', requireAuth, async (req, res) => {
 
 app.get('/api/user/favorites', requireAuth, async (req, res) => {
     try {
-        // Здесь нужно получить избранные автомобили пользователя из БД
-        // Пока возвращаем пустой массив или можно использовать заглушку
+        const favorites = await db.getUserFavorites(req.user.ID);
         
-        // Если в БД есть таблица Favorites:
-        // const favorites = await db.getUserFavorites(req.user.ID);
-        
-        // Заглушка:
         res.json({
             success: true,
-            favorites: []
+            favorites: favorites.map(car => ({
+                id: car.ID,
+                brand: car.Brand,
+                model: car.Model,
+                year: car.Year,
+                price: car.Price,
+                mileage: car.Mileage,
+                engineSize: car.EngineSize,
+                horsepower: car.Horsepower,
+                transmission: car.Transmission,
+                fuel: car.Fuel,
+                body: car.Body,
+                color: car.Color,
+                description: car.Description,
+                status: car.Status,
+                image_url: car.Image_url || 'https://via.placeholder.com/300x200?text=Автомобиль'
+            }))
         });
         
     } catch (error) {
@@ -828,20 +841,50 @@ app.get('/api/user/favorites', requireAuth, async (req, res) => {
     }
 });
 
-app.delete('/api/user/favorites/:id', requireAuth, async (req, res) => {
+
+app.delete('/api/user/favorites/:carId', requireAuth, async (req, res) => {
     try {
-        const carId = parseInt(req.params.id);
+        const carId = parseInt(req.params.carId);
         
-        // Здесь нужно удалить из БД
-        // Пока просто возвращаем успех
+        // Проверяем существование автомобиля
+        const car = await db.getCarById(carId);
+        if (!car) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Автомобиль не найден' 
+            });
+        }
+        
+        // Удаляем из избранного
+        const result = await db.removeFromFavorites(req.user.ID, carId);
         
         res.json({
             success: true,
-            message: 'Автомобиль удален из избранного'
+            message: 'Автомобиль удален из избранного',
+            removed: result.changes > 0
         });
         
     } catch (error) {
         console.error('Ошибка удаления из избранного:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+app.get('/api/user/favorites/check/:carId', requireAuth, async (req, res) => {
+    try {
+        const carId = parseInt(req.params.carId);
+        const isFavorite = await db.isCarInFavorites(req.user.ID, carId);
+        
+        res.json({
+            success: true,
+            isFavorite: isFavorite
+        });
+        
+    } catch (error) {
+        console.error('Ошибка проверки избранного:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 

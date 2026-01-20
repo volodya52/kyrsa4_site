@@ -155,6 +155,82 @@ class DatabaseCreate {
         );
     }
 
+    addToFavorites(userId, carId) {
+    return new Promise((resolve, reject) => {
+        this.db.run(
+            'INSERT OR IGNORE INTO Favorites (User_ID, Car_ID) VALUES (?, ?)',
+            [userId, carId],
+            function(err) {
+                if (err) {
+                    reject({ success: false, error: err.message });
+                } else {
+                    resolve({ 
+                        success: true, 
+                        id: this.lastID,
+                        changes: this.changes 
+                    });
+                }
+            }
+        );
+    });
+}
+
+    removeFromFavorites(userId, carId) {
+    return new Promise((resolve, reject) => {
+        this.db.run(
+            'DELETE FROM Favorites WHERE User_ID = ? AND Car_ID = ?',
+            [userId, carId],
+            function(err) {
+                if (err) {
+                    reject({ success: false, error: err.message });
+                } else {
+                    resolve({ 
+                        success: true, 
+                        changes: this.changes 
+                    });
+                }
+            }
+        );
+    });
+}
+
+
+isCarInFavorites(userId, carId) {
+    return new Promise((resolve, reject) => {
+        this.db.get(
+            'SELECT 1 FROM Favorites WHERE User_ID = ? AND Car_ID = ?',
+            [userId, carId],
+            (err, row) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(!!row);
+                }
+            }
+        );
+    });
+}
+
+    getUserFavorites(userId) {
+    return new Promise((resolve, reject) => {
+        this.db.all(
+            `SELECT c.* 
+             FROM Cars c
+             INNER JOIN Favorites f ON c.ID = f.Car_ID
+             WHERE f.User_ID = ?
+             ORDER BY c.ID DESC`,
+            [userId],
+            (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows || []);
+                }
+            }
+        );
+    });
+}
+
     addUser(name, email, password, phone = null, roleId = 2) {
         return new Promise((resolve, reject) => {
             this.db.run(
