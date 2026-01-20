@@ -1,575 +1,1120 @@
-// CarDetailsView.js - Управление детальной страницей автомобиля
-
-class CarDetailsView {
-    constructor() {
-        // Получаем ID автомобиля из URL
-        this.urlParams = new URLSearchParams(window.location.search);
-        this.carId = this.urlParams.get('id');
-        
-        // Элементы DOM
-        this.carDetailsContent = document.getElementById('carDetailsContent');
-        
-        // Модальные окна
-        this.testDriveModal = document.getElementById('testDriveModal');
-        this.tradeInModal = document.getElementById('tradeInModal');
-        this.buyModal = document.getElementById('buyModal');
-        
-        // Данные автомобиля
-        this.car = null;
-        
-        // Инициализация
-        this.init();
+// CarDetailsView.js - Исправленная версия с корректной обработкой авторизации
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем, находимся ли мы на странице деталей автомобиля
+    const carImage = document.getElementById('carImage');
+    if (!carImage) {
+        console.log('Не на странице деталей автомобиля, пропускаем инициализацию');
+        return;
     }
     
-    async init() {
-        console.log('Инициализация CarDetailsView...');
-        console.log('ID автомобиля:', this.carId);
+    console.log('На странице деталей автомобиля, начинаем инициализацию...');
+    
+    // Элементы DOM для отображения автомобиля
+    const carTitle = document.getElementById('carTitle');
+    const carPrice = document.getElementById('carPrice');
+    const carStatusBadge = document.getElementById('carStatusBadge');
+    const carDescription = document.getElementById('carDescription');
+    const carBrand = document.getElementById('carBrand');
+    const carModel = document.getElementById('carModel');
+    const carYear = document.getElementById('carYear');
+    const carMileage = document.getElementById('carMileage');
+    const carEngine = document.getElementById('carEngine');
+    const carHorsepower = document.getElementById('carHorsepower');
+    const carTransmission = document.getElementById('carTransmission');
+    const carFuel = document.getElementById('carFuel');
+    const carBody = document.getElementById('carBody');
+    const carColor = document.getElementById('carColor');
+    
+    // Кнопки действий
+    const buyCarBtn = document.getElementById('buyCar');
+    const creditBtn = document.getElementById('creditBtn');
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    
+    // Модальные окна
+    const buyModal = document.getElementById('buyModal');
+    const creditModal = document.getElementById('creditModal');
+    const loginModal = document.getElementById('loginModal');
+    const registerModal = document.getElementById('registerModal');
+    
+    // Данные
+    let currentCar = null;
+    let currentUser = null;
+    let isFavorite = false;
+    
+    // Инициализация
+    initCarDetails();
+    
+    async function initCarDetails() {
+        console.log('Инициализация страницы деталей автомобиля...');
         
-        if (!this.carId) {
-            this.showError('ID автомобиля не указан');
+        // Получаем ID автомобиля из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const carId = urlParams.get('id');
+        
+        console.log('Car ID from URL:', carId);
+        
+        if (!carId) {
+            showError('ID автомобиля не указан');
             return;
         }
         
-        // Загружаем информацию об автомобиле
-        await this.loadCarDetails();
+        // Показываем индикатор загрузки
+        showLoading();
+        
+        // Загружаем данные автомобиля
+        await loadCarDetails(carId);
+        
+        // Загружаем данные пользователя
+        loadUserData();
+        
+        // Если пользователь авторизован, проверяем избранное
+        if (currentUser && currentCar) {
+            await checkIfFavorite();
+        }
         
         // Настраиваем обработчики событий
-        this.setupEventListeners();
+        setupEventListeners();
+        setupAuthModals();
     }
     
-    // Загрузка деталей автомобиля
-    async loadCarDetails() {
-        try {
-            this.showLoading(true);
-            
-            console.log('Загружаем детали автомобиля ID:', this.carId);
-            
-            // Пробуем разные endpoints
-            let endpoints = [
-                `/api/cars/${this.carId}`,
-                `/api/admin/cars`
-            ];
-            
-            let carData = null;
-            
-            for (const endpoint of endpoints) {
-                try {
-                    const response = await fetch(endpoint);
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        
-                        if (endpoint.includes('/cars/')) {
-                            // Для endpoint с конкретным ID
-                            if (data.success && data.car) {
-                                carData = data.car;
-                                break;
-                            }
-                        } else {
-                            // Для endpoint со списком всех автомобилей
-                            if (data.success && data.cars) {
-                                const car = data.cars.find(c => c.id == this.carId || c.ID == this.carId);
-                                if (car) {
-                                    carData = car;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.log(`Ошибка при запросе к ${endpoint}:`, error.message);
-                }
-            }
-            
-            if (carData) {
-                this.car = carData;
-                console.log('Данные автомобиля загружены:', this.car);
-                this.renderCarDetails();
-            } else {
-                this.showError('Автомобиль не найден');
-            }
-            
-        } catch (error) {
-            console.error('Ошибка загрузки деталей автомобиля:', error);
-            this.showError('Не удалось загрузить информацию об автомобиле');
-        } finally {
-            this.showLoading(false);
-        }
-    }
-    
-    // Отображение деталей автомобиля
-    renderCarDetails() {
-        if (!this.car) {
-            this.showError('Нет данных об автомобиле');
-            return;
+    // Настройка модальных окон авторизации
+    function setupAuthModals() {
+        // Ссылки между модальными окнами
+        const showRegisterModalLink = document.getElementById('showRegisterModalLink');
+        const showLoginModalLink = document.getElementById('showLoginModalLink');
+        
+        if (showRegisterModalLink) {
+            showRegisterModalLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (loginModal) loginModal.style.display = 'none';
+                if (registerModal) registerModal.style.display = 'flex';
+            });
         }
         
-        // Извлекаем данные
-        const car = this.car;
-        const id = car.id || car.ID || '';
-        const brand = car.brand || car.Brand || 'Марка не указана';
-        const model = car.model || car.Model || 'Модель не указана';
-        const year = car.year || car.Year || '';
-        const price = car.price || car.Price || 0;
-        const mileage = car.mileage || car.Mileage || 0;
-        const engineSize = car.engineSize || car.EngineSize || '';
-        const horsepower = car.horsepower || car.Horsepower || '';
-        const transmission = car.transmission || car.Transmission || '';
-        const fuel = car.fuel || car.Fuel || '';
-        const body = car.body || car.Body || '';
-        const color = car.color || car.Color || '';
-        const description = car.description || car.Description || 'Описание отсутствует';
-        const status = car.status || car.Status || '';
-        const imageUrl = car.image_url || car.Image_url || 'https://via.placeholder.com/800x400?text=Нет+фото';
-        
-        // Форматируем значения
-        const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
-        const formattedMileage = mileage === 0 ? 'Новый' : `${mileage.toLocaleString('ru-RU')} км`;
-        
-        // Определяем цвет статуса
-        let statusClass = '';
-        let statusText = status;
-        
-        if (status.includes('наличи')) {
-            statusClass = 'status-in-stock';
-            statusText = 'В наличии';
-        } else if (status.includes('Продан') || status.includes('продан')) {
-            statusClass = 'status-sold';
-            statusText = 'Продан';
-        } else if (status.includes('Забронирован') || status.includes('забронирован')) {
-            statusClass = 'status-reserved';
-            statusText = 'Забронирован';
+        if (showLoginModalLink) {
+            showLoginModalLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (registerModal) registerModal.style.display = 'none';
+                if (loginModal) loginModal.style.display = 'flex';
+            });
         }
         
-        // Создаем HTML
-        const html = `
-            <div class="car-details-container">
-                <div class="car-gallery">
-                    <img src="${imageUrl}" 
-                         alt="${brand} ${model}" 
-                         class="car-main-image"
-                         id="mainImage"
-                         onerror="this.onerror=null; this.src='https://via.placeholder.com/800x400?text=Ошибка+загрузки';">
-                    
-                    <div class="car-thumbnails">
-                        <img src="${imageUrl}" 
-                             alt="${brand} ${model}"
-                             class="car-thumbnail active"
-                             onclick="carDetailsView.changeMainImage('${imageUrl}', this)">
-                    </div>
-                </div>
-                
-                <div class="car-info-details">
-                    <span class="car-status-badge ${statusClass}">${statusText}</span>
-                    
-                    <h1 class="car-title-large">${brand} ${model}</h1>
-                    
-                    <div class="car-meta">
-                        <span>Год: ${year}</span>
-                        <span>Кузов: ${body}</span>
-                        <span>Цвет: ${color}</span>
-                    </div>
-                    
-                    <div class="car-price-large">${formattedPrice} ₽</div>
-                    
-                    <div class="car-specifications">
-                        <h3>Технические характеристики</h3>
-                        <div class="spec-grid">
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Двигатель:</span>
-                                <span class="spec-value">${engineSize}L</span>
-                            </div>
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Мощность:</span>
-                                <span class="spec-value">${horsepower} л.с.</span>
-                            </div>
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Коробка передач:</span>
-                                <span class="spec-value">${transmission}</span>
-                            </div>
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Топливо:</span>
-                                <span class="spec-value">${fuel}</span>
-                            </div>
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Пробег:</span>
-                                <span class="spec-value">${formattedMileage}</span>
-                            </div>
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Кузов:</span>
-                                <span class="spec-value">${body}</span>
-                            </div>
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Цвет:</span>
-                                <span class="spec-value">${color}</span>
-                            </div>
-                            <div class="spec-item-detail">
-                                <span class="spec-label">Год выпуска:</span>
-                                <span class="spec-value">${year}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="car-description">
-                        <h3>Описание</h3>
-                        <p class="car-description-full">${description}</p>
-                    </div>
-                    
-                    <div class="action-buttons">
-                        <button class="btn-test-drive" onclick="carDetailsView.openTestDriveModal()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M5 12h14M12 5l7 7-7 7"/>
-                            </svg>
-                            Тест-драйв
-                        </button>
-                        <button class="btn-trade-in" onclick="carDetailsView.openTradeInModal()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 7h7m0 0v7m0-7l-7 7-4-4-6 6"/>
-                            </svg>
-                            Trade-In
-                        </button>
-                        <button class="btn-buy" onclick="carDetailsView.openBuyModal()">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/>
-                            </svg>
-                            Купить
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        this.carDetailsContent.innerHTML = html;
-    }
-    
-    // Изменение главного изображения
-    changeMainImage(src, thumbnail) {
-        const mainImage = document.getElementById('mainImage');
-        if (mainImage) {
-            mainImage.src = src;
-        }
-        
-        // Обновляем активную миниатюру
-        document.querySelectorAll('.car-thumbnail').forEach(img => {
-            img.classList.remove('active');
-        });
-        thumbnail.classList.add('active');
-    }
-    
-    // Открытие модального окна тест-драйва
-    openTestDriveModal() {
-        if (!this.car) return;
-        
-        const brand = this.car.brand || this.car.Brand || '';
-        const model = this.car.model || this.car.Model || '';
-        
-        document.getElementById('testDriveCarInfo').textContent = 
-            `Вы записываетесь на тест-драйв ${brand} ${model}`;
-        
-        // Устанавливаем минимальную дату (завтра)
-        const tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const minDate = tomorrow.toISOString().split('T')[0];
-        document.getElementById('testDriveDate').min = minDate;
-        
-        this.testDriveModal.style.display = 'flex';
-    }
-    
-    // Открытие модального окна Trade-In
-    openTradeInModal() {
-        if (!this.car) return;
-        
-        const brand = this.car.brand || this.car.Brand || '';
-        const model = this.car.model || this.car.Model || '';
-        const price = this.car.price || this.car.Price || 0;
-        const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
-        
-        document.getElementById('tradeInCarInfo').textContent = 
-            `Вы подаете заявку на Trade-In для покупки ${brand} ${model} за ${formattedPrice} ₽`;
-        
-        this.tradeInModal.style.display = 'flex';
-    }
-    
-    // Открытие модального окна покупки
-    openBuyModal() {
-        if (!this.car) return;
-        
-        const brand = this.car.brand || this.car.Brand || '';
-        const model = this.car.model || this.car.Model || '';
-        const price = this.car.price || this.car.Price || 0;
-        const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
-        
-        document.getElementById('buyCarInfo').textContent = 
-            `Вы оформляете заявку на покупку ${brand} ${model} за ${formattedPrice} ₽`;
-        
-        this.buyModal.style.display = 'flex';
-    }
-    
-    // Настройка обработчиков событий
-    setupEventListeners() {
         // Закрытие модальных окон
-        const closeButtons = [
-            { element: 'closeTestDriveModal', modal: this.testDriveModal },
-            { element: 'closeTradeInModal', modal: this.tradeInModal },
-            { element: 'closeBuyModal', modal: this.buyModal }
-        ];
+        const closeLoginModal = document.getElementById('closeLoginModal');
+        const closeRegisterModal = document.getElementById('closeRegisterModal');
+        const cancelLoginBtn = document.getElementById('cancelLoginBtn');
+        const cancelRegisterBtn = document.getElementById('cancelRegisterBtn');
         
-        closeButtons.forEach(({ element, modal }) => {
-            const closeBtn = document.getElementById(element);
-            if (closeBtn && modal) {
-                closeBtn.addEventListener('click', () => {
-                    modal.style.display = 'none';
-                });
-            }
-        });
-        
-        // Кнопки отмены
-        const cancelButtons = [
-            { element: 'cancelTestDriveBtn', modal: this.testDriveModal },
-            { element: 'cancelTradeInBtn', modal: this.tradeInModal },
-            { element: 'cancelBuyBtn', modal: this.buyModal }
-        ];
-        
-        cancelButtons.forEach(({ element, modal }) => {
-            const cancelBtn = document.getElementById(element);
-            if (cancelBtn && modal) {
-                cancelBtn.addEventListener('click', () => {
-                    modal.style.display = 'none';
-                });
-            }
-        });
-        
-        // Подтверждение тест-драйва
-        const confirmTestDriveBtn = document.getElementById('confirmTestDriveBtn');
-        if (confirmTestDriveBtn) {
-            confirmTestDriveBtn.addEventListener('click', () => this.submitTestDrive());
+        if (closeLoginModal) {
+            closeLoginModal.addEventListener('click', () => {
+                if (loginModal) loginModal.style.display = 'none';
+            });
         }
         
-        // Подтверждение Trade-In
-        const confirmTradeInBtn = document.getElementById('confirmTradeInBtn');
-        if (confirmTradeInBtn) {
-            confirmTradeInBtn.addEventListener('click', () => this.submitTradeIn());
+        if (closeRegisterModal) {
+            closeRegisterModal.addEventListener('click', () => {
+                if (registerModal) registerModal.style.display = 'none';
+            });
         }
         
-        // Подтверждение покупки
-        const confirmBuyBtn = document.getElementById('confirmBuyBtn');
-        if (confirmBuyBtn) {
-            confirmBuyBtn.addEventListener('click', () => this.submitBuy());
+        if (cancelLoginBtn) {
+            cancelLoginBtn.addEventListener('click', () => {
+                if (loginModal) loginModal.style.display = 'none';
+            });
+        }
+        
+        if (cancelRegisterBtn) {
+            cancelRegisterBtn.addEventListener('click', () => {
+                if (registerModal) registerModal.style.display = 'none';
+            });
         }
         
         // Закрытие по клику вне модального окна
-        [this.testDriveModal, this.tradeInModal, this.buyModal].forEach(modal => {
-            if (modal) {
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        modal.style.display = 'none';
+        if (loginModal) {
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    loginModal.style.display = 'none';
+                }
+            });
+        }
+        
+        if (registerModal) {
+            registerModal.addEventListener('click', (e) => {
+                if (e.target === registerModal) {
+                    registerModal.style.display = 'none';
+                }
+            });
+        }
+        
+        // Обработка входа
+        const confirmLoginBtn = document.getElementById('confirmLoginBtn');
+        if (confirmLoginBtn) {
+            confirmLoginBtn.addEventListener('click', handleLogin);
+        }
+        
+        // Обработка регистрации
+        const confirmRegisterBtn = document.getElementById('confirmRegisterBtn');
+        if (confirmRegisterBtn) {
+            confirmRegisterBtn.addEventListener('click', handleRegister);
+        }
+        
+        // Кнопка "Войти" в шапке
+        const signinLink = document.getElementById('signinLink');
+        if (signinLink) {
+            signinLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (currentUser) {
+                    // Если пользователь уже авторизован, показываем меню профиля
+                    handleLoggedInUser();
+                } else {
+                    // Если не авторизован, показываем окно входа
+                    showAuthModal();
+                }
+            });
+        }
+    }
+    
+    // Показать окно авторизации
+    function showAuthModal() {
+        if (loginModal) {
+            loginModal.style.display = 'flex';
+        }
+    }
+    
+    // Обработка входа
+    async function handleLogin() {
+        const email = document.getElementById('loginEmail')?.value;
+        const password = document.getElementById('loginPassword')?.value;
+        
+        if (!email || !password) {
+            showNotification('Введите email и пароль', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Сохраняем токен и данные пользователя
+                localStorage.setItem('auth_token', data.token);
+                localStorage.setItem('user_data', JSON.stringify(data.user));
+                
+                currentUser = data.user;
+                showNotification('Вход выполнен успешно!', 'success');
+                
+                // Закрываем модальное окно
+                if (loginModal) loginModal.style.display = 'none';
+                
+                // Обновляем кнопку входа
+                updateSignInLink();
+                
+                // Проверяем избранное
+                if (currentCar) {
+                    await checkIfFavorite();
+                }
+                
+                // Выполняем отложенное действие, если оно было
+                executePendingAction();
+            } else {
+                showNotification('Ошибка входа: ' + (data.error || 'Неверные данные'), 'error');
+            }
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            showNotification('Ошибка сети. Попробуйте позже.', 'error');
+        }
+    }
+    
+    // Обработка регистрации
+    async function handleRegister() {
+        const name = document.getElementById('regName')?.value;
+        const phone = document.getElementById('regPhone')?.value;
+        const email = document.getElementById('regEmail')?.value;
+        const password = document.getElementById('regPassword')?.value;
+        const confirmPassword = document.getElementById('regConfirmPassword')?.value;
+        
+        // Валидация
+        if (!name || !email || !password || !confirmPassword) {
+            showNotification('Заполните все обязательные поля', 'error');
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            showNotification('Пароли не совпадают', 'error');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showNotification('Пароль должен быть не менее 6 символов', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, email, password, phone })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Сохраняем токен и данные пользователя
+                localStorage.setItem('auth_token', data.token);
+                localStorage.setItem('user_data', JSON.stringify(data.user));
+                
+                currentUser = data.user;
+                showNotification('Регистрация успешна!', 'success');
+                
+                // Закрываем модальное окно
+                if (registerModal) registerModal.style.display = 'none';
+                
+                // Обновляем кнопку входа
+                updateSignInLink();
+                
+                // Проверяем избранное
+                if (currentCar) {
+                    await checkIfFavorite();
+                }
+                
+                // Выполняем отложенное действие, если оно было
+                executePendingAction();
+            } else {
+                showNotification('Ошибка регистрации: ' + (data.error || 'Проверьте введенные данные'), 'error');
+            }
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            showNotification('Ошибка сети. Попробуйте позже.', 'error');
+        }
+    }
+    
+    // Хранение отложенного действия
+    let pendingAction = null;
+    
+    // Установить отложенное действие
+    function setPendingAction(action) {
+        pendingAction = action;
+    }
+    
+    // Выполнить отложенное действие
+    function executePendingAction() {
+        if (pendingAction) {
+            pendingAction();
+            pendingAction = null;
+        }
+    }
+    
+    // Обновить кнопку входа в шапке
+    function updateSignInLink() {
+        const signinLink = document.getElementById('signinLink');
+        if (!signinLink) return;
+        
+        if (currentUser) {
+            signinLink.textContent = currentUser.name;
+            signinLink.href = '#';
+            signinLink.title = 'Профиль';
+        } else {
+            signinLink.textContent = 'Войти';
+            signinLink.href = '#';
+            signinLink.title = 'Войти в систему';
+        }
+    }
+    
+    // Обработка для авторизованного пользователя
+    function handleLoggedInUser() {
+        if (confirm(`Вы вошли как ${currentUser.name}. Хотите выйти?`)) {
+            handleLogout();
+        }
+    }
+    
+    // Выход из системы
+    async function handleLogout() {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+            try {
+                await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
                     }
                 });
+            } catch (error) {
+                console.error('Ошибка выхода:', error);
+            }
+        }
+        
+        // Очищаем локальное хранилище
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
+        
+        currentUser = null;
+        isFavorite = false;
+        
+        showNotification('Вы вышли из системы', 'info');
+        updateSignInLink();
+        updateFavoriteButton();
+    }
+    
+    // Показать индикатор загрузки
+    function showLoading() {
+        if (carTitle) carTitle.textContent = 'Загрузка...';
+        if (carPrice) carPrice.textContent = '-';
+        if (carDescription) carDescription.textContent = 'Загрузка описания...';
+    }
+    
+    // Загрузка данных автомобиля
+    async function loadCarDetails(carId) {
+        try {
+            console.log('Загрузка деталей автомобиля ID:', carId);
+            
+            // Пробуем несколько вариантов endpoints
+            let apiUrl = `/api/cars/${carId}`;
+            console.log('Пробуем endpoint:', apiUrl);
+            
+            let response = await fetch(apiUrl);
+            
+            // Если не работает, пробуем альтернативный endpoint
+            if (!response.ok) {
+                console.log('Первый endpoint не сработал, пробуем /api/admin/cars');
+                response = await fetch('/api/admin/cars');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.cars) {
+                        // Ищем автомобиль по ID в списке всех автомобилей
+                        const car = data.cars.find(c => c.id == carId || c.ID == carId);
+                        if (car) {
+                            currentCar = car;
+                            displayCarDetails(car);
+                            return;
+                        }
+                    }
+                }
+                
+                throw new Error(`Не удалось найти автомобиль с ID ${carId}`);
+            }
+            
+            const data = await response.json();
+            console.log('Данные с сервера:', data);
+            
+            if (data.success) {
+                currentCar = data.car;
+                displayCarDetails(data.car);
+            } else {
+                throw new Error(data.error || 'Не удалось загрузить данные автомобиля');
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки деталей автомобиля:', error);
+            showError('Не удалось загрузить данные автомобиля: ' + error.message);
+        }
+    }
+    
+    // Отображение данных автомобиля
+    function displayCarDetails(car) {
+    console.log('Отображение данных автомобиля:', car);
+    
+    // Заголовок и цена
+    const brand = car.brand || car.Brand || 'Не указана';
+    const model = car.model || car.Model || 'Не указана';
+    const price = car.price || car.Price || 0;
+    const status = car.status || car.Status || 'В наличии';
+    
+    if (carTitle) carTitle.textContent = `${brand} ${model}`;
+    if (carPrice) carPrice.textContent = formatPrice(price);
+    
+    // Статус (бейдж)
+    if (carStatusBadge) {
+        carStatusBadge.textContent = status;
+        carStatusBadge.className = 'car-status-badge';
+        carStatusBadge.classList.add(getStatusClass(status));
+    }
+    
+    // Описание
+    if (carDescription) {
+        const description = car.description || car.Description || 'Описание отсутствует';
+        carDescription.textContent = description;
+        carDescription.style.whiteSpace = 'pre-wrap';
+    }
+    
+    // Изображение (уменьшено на 10% за счет контейнера)
+    const imageUrl = car.image_url || car.Image_url || 'https://via.placeholder.com/600x400?text=Автомобиль';
+    if (carImage) {
+        carImage.src = imageUrl;
+        carImage.alt = `${brand} ${model}`;
+        carImage.onerror = function() {
+            this.src = 'https://via.placeholder.com/600x400?text=Ошибка+загрузки';
+        };
+    }
+    
+    // Характеристики (теперь в таблице)
+    if (carBrand) carBrand.textContent = brand || '-';
+    if (carModel) carModel.textContent = model || '-';
+    if (carYear) {
+        const year = car.year || car.Year || 'Не указан';
+        carYear.textContent = year;
+    }
+    
+    if (carMileage) {
+        const mileage = car.mileage || car.Mileage || 0;
+        carMileage.textContent = mileage === 0 ? 'Новый' : `${mileage.toLocaleString('ru-RU')} км`;
+    }
+    
+    if (carEngine) {
+        const engineSize = car.engineSize || car.EngineSize;
+        carEngine.textContent = engineSize ? `${engineSize} л` : 'Не указан';
+    }
+    
+    if (carHorsepower) {
+        const horsepower = car.horsepower || car.Horsepower;
+        carHorsepower.textContent = horsepower ? `${horsepower} л.с.` : 'Не указано';
+    }
+    
+    if (carTransmission) {
+        const transmission = car.transmission || car.Transmission || 'Не указана';
+        carTransmission.textContent = transmission;
+    }
+    
+    if (carFuel) {
+        const fuel = car.fuel || car.Fuel || 'Не указано';
+        carFuel.textContent = fuel;
+    }
+    
+    if (carBody) {
+        const body = car.body || car.Body || 'Не указан';
+        carBody.textContent = body;
+    }
+    
+    if (carColor) {
+        const color = car.color || car.Color || 'Не указан';
+        carColor.textContent = color;
+    }
+}
+    
+    // Получить CSS класс для статуса
+    function getStatusClass(status) {
+        const statusMap = {
+            'В наличии': 'status-in-stock',
+            'Новый': 'status-new',
+            'Б/У': 'status-used',
+            'Продано': 'status-sold',
+            'Предзаказ': 'status-preorder'
+        };
+        return statusMap[status] || 'status-default';
+    }
+    
+    // Загрузка данных пользователя
+    function loadUserData() {
+        try {
+            const userData = localStorage.getItem('user_data');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                console.log('Пользователь загружен:', currentUser);
+                updateSignInLink();
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки данных пользователя:', error);
+        }
+    }
+    
+    // Проверка, в избранном ли автомобиль
+    async function checkIfFavorite() {
+        if (!currentUser || !currentCar) return;
+        
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+        
+        try {
+            const carId = currentCar.id || currentCar.ID;
+            const response = await fetch(`/api/user/favorites/check/${carId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                isFavorite = data.success && data.isFavorite;
+                updateFavoriteButton();
+            }
+        } catch (error) {
+            console.error('Ошибка проверки избранного:', error);
+        }
+    }
+    
+    // Форматирование цены
+    function formatPrice(price) {
+        return new Intl.NumberFormat('ru-RU').format(Math.round(price)) + ' ₽';
+    }
+    
+    // Настройка обработчиков событий
+    function setupEventListeners() {
+        // Кнопка "Купить автомобиль"
+        if (buyCarBtn) {
+            buyCarBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    // Сохраняем действие и показываем окно авторизации
+                    setPendingAction(() => {
+                        openBuyModal();
+                    });
+                    showAuthModal();
+                    return;
+                }
+                openBuyModal();
+            });
+        }
+        
+        // Кнопка "Рассчитать кредит"
+        if (creditBtn) {
+            creditBtn.addEventListener('click', () => {
+                openCreditModal();
+            });
+        }
+        
+        // Кнопка "В избранное"
+        if (favoriteBtn) {
+            favoriteBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    // Сохраняем действие и показываем окно авторизации
+                    setPendingAction(() => {
+                        toggleFavorite();
+                    });
+                    showAuthModal();
+                    return;
+                }
+                toggleFavorite();
+            });
+        }
+        
+        // Настройка модальных окон
+        setupBuyModal();
+        setupCreditModal();
+    }
+    
+    // Переключение избранного
+    async function toggleFavorite() {
+        if (!currentUser) {
+            showLoginPrompt();
+            return;
+        }
+        
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            showLoginPrompt();
+            return;
+        }
+        
+        if (!currentCar) {
+            showNotification('Данные автомобиля не загружены', 'error');
+            return;
+        }
+        
+        const carId = currentCar.id || currentCar.ID;
+        const carName = `${currentCar.brand || currentCar.Brand} ${currentCar.model || currentCar.Model}`;
+        
+        try {
+            if (isFavorite) {
+                // Удаляем из избранного
+                const response = await fetch(`/api/user/favorites/${carId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    isFavorite = false;
+                    updateFavoriteButton();
+                    showNotification(`"${carName}" удален из избранного`, 'success');
+                } else {
+                    showNotification('Ошибка удаления из избранного: ' + (data.error || ''), 'error');
+                }
+            } else {
+                // Добавляем в избранное
+                const response = await fetch('/api/user/favorites', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ carId: carId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    isFavorite = true;
+                    updateFavoriteButton();
+                    showNotification(`"${carName}" добавлен в избранное`, 'success');
+                } else {
+                    showNotification('Ошибка добавления в избранное: ' + (data.error || ''), 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка переключения избранного:', error);
+            showNotification('Ошибка сети. Попробуйте позже.', 'error');
+        }
+    }
+    
+    // Обновление кнопки избранного
+    function updateFavoriteButton() {
+        if (!favoriteBtn) return;
+        
+        const carName = `${currentCar.brand || currentCar.Brand} ${currentCar.model || currentCar.Model}`;
+        
+        favoriteBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="${isFavorite ? '#ff4757' : 'none'}" 
+                 stroke="${isFavorite ? '#ff4757' : 'currentColor'}" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+            ${isFavorite ? 'В избранном' : 'В избранное'}
+        `;
+        
+        favoriteBtn.title = isFavorite ? `Удалить "${carName}" из избранного` : `Добавить "${carName}" в избранное`;
+        
+        // Обновляем стили кнопки
+        if (isFavorite) {
+            favoriteBtn.classList.add('active');
+            favoriteBtn.classList.remove('btn-outline');
+        } else {
+            favoriteBtn.classList.remove('active');
+            favoriteBtn.classList.add('btn-outline');
+        }
+    }
+    
+    // Показать предложение войти (резервный вариант)
+    function showLoginPrompt() {
+        if (confirm('Для выполнения действия нужно войти в систему. Перейти к авторизации?')) {
+            showAuthModal();
+        }
+    }
+    
+    // Открытие модального окна покупки
+    function openBuyModal() {
+        if (!buyModal || !currentCar) return;
+        
+        // Автозаполнение формы данными пользователя, если он авторизован
+        if (currentUser) {
+            const buyName = document.getElementById('buyName');
+            const buyPhone = document.getElementById('buyPhone');
+            const buyEmail = document.getElementById('buyEmail');
+            
+            if (buyName && currentUser.name) buyName.value = currentUser.name;
+            if (buyEmail && currentUser.email) buyEmail.value = currentUser.email;
+            if (buyPhone && currentUser.phone) buyPhone.value = currentUser.phone || '';
+        }
+        
+        buyModal.style.display = 'flex';
+    }
+    
+    // Настройка модального окна покупки
+    function setupBuyModal() {
+        const closeBuyModal = document.getElementById('closeBuyModal');
+        const cancelBuyBtn = document.getElementById('cancelBuyBtn');
+        const confirmBuyBtn = document.getElementById('confirmBuyBtn');
+        
+        if (!closeBuyModal || !cancelBuyBtn || !confirmBuyBtn) {
+            console.warn('Элементы модального окна покупки не найдены');
+            return;
+        }
+        
+        closeBuyModal.addEventListener('click', () => {
+            buyModal.style.display = 'none';
+        });
+        
+        cancelBuyBtn.addEventListener('click', () => {
+            buyModal.style.display = 'none';
+        });
+        
+        confirmBuyBtn.addEventListener('click', async () => {
+            await submitBuyRequest();
+        });
+        
+        // Закрытие по клику вне модального окна
+        buyModal.addEventListener('click', (e) => {
+            if (e.target === buyModal) {
+                buyModal.style.display = 'none';
             }
         });
     }
     
-    // Отправка заявки на тест-драйв
-    async submitTestDrive() {
-        const formData = {
-            name: document.getElementById('testDriveName').value,
-            phone: document.getElementById('testDrivePhone').value,
-            email: document.getElementById('testDriveEmail').value,
-            date: document.getElementById('testDriveDate').value,
-            time: document.getElementById('testDriveTime').value,
-            message: document.getElementById('testDriveMessage').value,
-            carId: this.carId,
-            carBrand: this.car.brand || this.car.Brand,
-            carModel: this.car.model || this.car.Model
-        };
-        
-        // Валидация
-        if (!formData.name || !formData.phone || !formData.email || !formData.date || !formData.time) {
-            alert('Заполните все обязательные поля');
-            return;
-        }
-        
-        try {
-            // Отправляем запрос на сервер
-            const response = await fetch('/api/test-drive', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert('Заявка на тест-драйв успешно отправлена! Мы свяжемся с вами в ближайшее время.');
-                this.testDriveModal.style.display = 'none';
-                this.clearTestDriveForm();
-            } else {
-                alert('Ошибка: ' + data.error);
-            }
-        } catch (error) {
-            console.error('Ошибка отправки заявки:', error);
-            alert('Произошла ошибка при отправке заявки. Пожалуйста, попробуйте позже.');
-        }
-    }
-    
-    // Отправка заявки на Trade-In
-    async submitTradeIn() {
-        const formData = {
-            userCarBrand: document.getElementById('tradeInBrand').value,
-            userCarModel: document.getElementById('tradeInModel').value,
-            userCarYear: document.getElementById('tradeInYear').value,
-            userCarMileage: document.getElementById('tradeInMileage').value,
-            userCarCondition: document.getElementById('tradeInCondition').value,
-            name: document.getElementById('tradeInName').value,
-            phone: document.getElementById('tradeInPhone').value,
-            email: document.getElementById('tradeInEmail').value,
-            message: document.getElementById('tradeInMessage').value,
-            carId: this.carId,
-            carBrand: this.car.brand || this.car.Brand,
-            carModel: this.car.model || this.car.Model
-        };
-        
-        // Валидация
-        if (!formData.userCarBrand || !formData.userCarModel || !formData.userCarYear || 
-            !formData.userCarMileage || !formData.userCarCondition || !formData.name || 
-            !formData.phone || !formData.email) {
-            alert('Заполните все обязательные поля');
-            return;
-        }
-        
-        try {
-            // Отправляем запрос на сервер
-            const response = await fetch('/api/trade-in', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert('Заявка на Trade-In успешно отправлена! Мы свяжемся с вами для оценки вашего автомобиля.');
-                this.tradeInModal.style.display = 'none';
-                this.clearTradeInForm();
-            } else {
-                alert('Ошибка: ' + data.error);
-            }
-        } catch (error) {
-            console.error('Ошибка отправки заявки:', error);
-            alert('Произошла ошибка при отправке заявки. Пожалуйста, попробуйте позже.');
-        }
-    }
-    
     // Отправка заявки на покупку
-    async submitBuy() {
-        const formData = {
-            name: document.getElementById('buyName').value,
-            phone: document.getElementById('buyPhone').value,
-            email: document.getElementById('buyEmail').value,
-            paymentMethod: document.getElementById('buyPaymentMethod').value,
-            message: document.getElementById('buyMessage').value,
-            carId: this.carId,
-            carBrand: this.car.brand || this.car.Brand,
-            carModel: this.car.model || this.car.Model
-        };
+    async function submitBuyRequest() {
+        const name = document.getElementById('buyName')?.value;
+        const phone = document.getElementById('buyPhone')?.value;
+        const email = document.getElementById('buyEmail')?.value;
+        const paymentMethod = document.getElementById('buyPaymentMethod')?.value;
+        const message = document.getElementById('buyMessage')?.value;
         
         // Валидация
-        if (!formData.name || !formData.phone || !formData.email || !formData.paymentMethod) {
-            alert('Заполните все обязательные поля');
+        if (!name || !phone || !email) {
+            showNotification('Заполните обязательные поля', 'error');
+            return;
+        }
+        
+        if (!currentCar) {
+            showNotification('Данные автомобиля не загружены', 'error');
             return;
         }
         
         try {
-            // Отправляем запрос на сервер
             const response = await fetch('/api/buy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({
+                    name,
+                    phone,
+                    email,
+                    paymentMethod,
+                    message,
+                    carId: currentCar.id || currentCar.ID,
+                    carBrand: currentCar.brand || currentCar.Brand,
+                    carModel: currentCar.model || currentCar.Model
+                })
             });
             
             const data = await response.json();
             
             if (data.success) {
-                alert('Заявка на покупку успешно отправлена! Наш менеджер свяжется с вами для оформления сделки.');
-                this.buyModal.style.display = 'none';
-                this.clearBuyForm();
+                showNotification('Заявка на покупку отправлена! Мы свяжемся с вами в ближайшее время.', 'success');
+                if (buyModal) buyModal.style.display = 'none';
+                // Очищаем форму
+                const buyForm = document.getElementById('buyForm');
+                if (buyForm) buyForm.reset();
             } else {
-                alert('Ошибка: ' + data.error);
+                showNotification('Ошибка отправки заявки: ' + (data.error || 'Неизвестная ошибка'), 'error');
             }
         } catch (error) {
-            console.error('Ошибка отправки заявки:', error);
-            alert('Произошла ошибка при отправке заявки. Пожалуйста, попробуйте позже.');
+            console.error('Ошибка отправки заявки на покупку:', error);
+            showNotification('Ошибка отправки заявки. Попробуйте позже.', 'error');
         }
     }
     
-    // Очистка формы тест-драйва
-    clearTestDriveForm() {
-        document.getElementById('testDriveName').value = '';
-        document.getElementById('testDrivePhone').value = '';
-        document.getElementById('testDriveEmail').value = '';
-        document.getElementById('testDriveDate').value = '';
-        document.getElementById('testDriveTime').value = '';
-        document.getElementById('testDriveMessage').value = '';
-    }
-    
-    // Очистка формы Trade-In
-    clearTradeInForm() {
-        document.getElementById('tradeInBrand').value = '';
-        document.getElementById('tradeInModel').value = '';
-        document.getElementById('tradeInYear').value = '';
-        document.getElementById('tradeInMileage').value = '';
-        document.getElementById('tradeInCondition').value = '';
-        document.getElementById('tradeInName').value = '';
-        document.getElementById('tradeInPhone').value = '';
-        document.getElementById('tradeInEmail').value = '';
-        document.getElementById('tradeInMessage').value = '';
-    }
-    
-    // Очистка формы покупки
-    clearBuyForm() {
-        document.getElementById('buyName').value = '';
-        document.getElementById('buyPhone').value = '';
-        document.getElementById('buyEmail').value = '';
-        document.getElementById('buyPaymentMethod').value = '';
-        document.getElementById('buyMessage').value = '';
-    }
-    
-    // Показать загрузку
-    showLoading(show) {
-        if (!this.carDetailsContent) return;
+    // Открытие модального окна кредитного калькулятора
+    function openCreditModal() {
+        if (!creditModal || !currentCar) return;
         
-        if (show) {
-            this.carDetailsContent.innerHTML = `
-                <div class="loading-spinner">
-                    <div class="spinner"></div>
-                    <p>Загрузка информации об автомобиле...</p>
-                </div>
+        // Заполняем информацию об автомобиле в калькуляторе
+        const calcCarImage = document.getElementById('calcCarImage');
+        const calcCarTitle = document.getElementById('calcCarTitle');
+        const calcCarPrice = document.getElementById('calcCarPrice');
+        
+        if (calcCarImage) {
+            const imageUrl = currentCar.image_url || currentCar.Image_url || 'https://via.placeholder.com/300x200?text=Автомобиль';
+            calcCarImage.src = imageUrl;
+            calcCarImage.alt = `${currentCar.brand || currentCar.Brand} ${currentCar.model || currentCar.Model}`;
+        }
+        
+        if (calcCarTitle) {
+            calcCarTitle.textContent = `${currentCar.brand || currentCar.Brand} ${currentCar.model || currentCar.Model}`;
+        }
+        
+        if (calcCarPrice) {
+            const price = currentCar.price || currentCar.Price || 0;
+            calcCarPrice.textContent = formatPrice(price);
+        }
+        
+        // Инициализируем калькулятор
+        initCreditCalculator();
+        
+        // Показываем модальное окно
+        creditModal.style.display = 'flex';
+    }
+    
+    // Настройка модального окна кредитного калькулятора
+    function setupCreditModal() {
+        const closeCreditModal = document.getElementById('closeCreditModal');
+        const cancelCreditBtn = document.getElementById('cancelCreditBtn');
+        const applyCreditBtn = document.getElementById('applyCreditBtn');
+        
+        if (!closeCreditModal || !cancelCreditBtn || !applyCreditBtn) {
+            console.warn('Элементы модального окна кредита не найдены');
+            return;
+        }
+        
+        closeCreditModal.addEventListener('click', () => {
+            creditModal.style.display = 'none';
+        });
+        
+        cancelCreditBtn.addEventListener('click', () => {
+            creditModal.style.display = 'none';
+        });
+        
+        applyCreditBtn.addEventListener('click', () => {
+            if (!currentUser) {
+                // Сохраняем действие и показываем окно авторизации
+                setPendingAction(() => {
+                    showNotification('Заявка на кредит будет отправлена при оформлении покупки', 'info');
+                    creditModal.style.display = 'none';
+                });
+                showAuthModal();
+                return;
+            }
+            showNotification('Заявка на кредит будет отправлена при оформлении покупки', 'info');
+            creditModal.style.display = 'none';
+        });
+        
+        // Закрытие по клику вне модального окна
+        creditModal.addEventListener('click', (e) => {
+            if (e.target === creditModal) {
+                creditModal.style.display = 'none';
+            }
+        });
+    }
+    
+    // Инициализация кредитного калькулятора
+    function initCreditCalculator() {
+        if (!currentCar) return;
+        
+        const carPriceValue = currentCar.price || currentCar.Price || 0;
+        if (carPriceValue <= 0) return;
+        
+        // Элементы калькулятора
+        const calcInitialPayment = document.getElementById('calcInitialPayment');
+        const calcInitialPaymentRange = document.getElementById('calcInitialPaymentRange');
+        const calcInitialPaymentPercent = document.getElementById('calcInitialPaymentPercent');
+        const calcCreditTerm = document.getElementById('calcCreditTerm');
+        const calcCreditTermRange = document.getElementById('calcCreditTermRange');
+        const calcInterestRate = document.getElementById('calcInterestRate');
+        const calcCalculateCreditBtn = document.getElementById('calcCalculateCredit');
+        
+        // Результаты
+        const calcLoanAmount = document.getElementById('calcLoanAmount');
+        const calcMonthlyPayment = document.getElementById('calcMonthlyPayment');
+        const calcOverpayment = document.getElementById('calcOverpayment');
+        const calcTotalAmount = document.getElementById('calcTotalAmount');
+        
+        if (!calcInitialPayment || !calcInitialPaymentRange) return;
+        
+        // Устанавливаем начальные значения
+        const initialAmount = Math.round(carPriceValue * 0.2); // 20% по умолчанию
+        calcInitialPayment.value = initialAmount;
+        calcInitialPaymentRange.value = 20;
+        updateInitialPaymentPercent();
+        
+        // Синхронизация ползунка и поля ввода первоначального взноса
+        calcInitialPayment.addEventListener('input', function() {
+            const value = parseInt(this.value) || 0;
+            const percent = Math.min(100, Math.round((value / carPriceValue) * 100));
+            calcInitialPaymentRange.value = percent;
+            updateInitialPaymentPercent();
+            calculateCredit();
+        });
+        
+        calcInitialPaymentRange.addEventListener('input', function() {
+            const percent = parseInt(this.value);
+            const amount = Math.round(carPriceValue * (percent / 100));
+            calcInitialPayment.value = amount;
+            updateInitialPaymentPercent();
+            calculateCredit();
+        });
+        
+        // Синхронизация ползунка и поля ввода срока кредита
+        if (calcCreditTerm && calcCreditTermRange) {
+            calcCreditTerm.addEventListener('input', function() {
+                const value = parseInt(this.value) || 36;
+                const clampedValue = Math.min(84, Math.max(12, value));
+                this.value = clampedValue;
+                calcCreditTermRange.value = clampedValue;
+                calculateCredit();
+            });
+            
+            calcCreditTermRange.addEventListener('input', function() {
+                const value = parseInt(this.value);
+                calcCreditTerm.value = value;
+                calculateCredit();
+            });
+        }
+        
+        // Изменение процентной ставки
+        if (calcInterestRate) {
+            calcInterestRate.addEventListener('change', function() {
+                calculateCredit();
+            });
+        }
+        
+        // Кнопка расчета
+        if (calcCalculateCreditBtn) {
+            calcCalculateCreditBtn.addEventListener('click', function() {
+                calculateCredit();
+                showNotification('Расчет кредита обновлен', 'success');
+            });
+        }
+        
+        // Первоначальный расчет
+        calculateCredit();
+        
+        function updateInitialPaymentPercent() {
+            if (!calcInitialPaymentPercent || !calcInitialPaymentRange) return;
+            const percent = calcInitialPaymentRange.value;
+            calcInitialPaymentPercent.textContent = `${percent}% от стоимости`;
+        }
+        
+        function calculateCredit() {
+            const initialAmount = parseInt(calcInitialPayment.value) || 0;
+            const termMonths = parseInt(calcCreditTerm.value) || 36;
+            const annualRate = parseFloat(calcInterestRate.value) || 8.5;
+            
+            // Проверка корректности данных
+            if (initialAmount >= carPriceValue) {
+                showNotification('Первоначальный взнос не может быть больше стоимости автомобиля', 'error');
+                return;
+            }
+            
+            // Сумма кредита
+            const loan = carPriceValue - initialAmount;
+            
+            // Ежемесячная процентная ставка
+            const monthlyRate = annualRate / 100 / 12;
+            
+            // Расчет аннуитетного платежа
+            const monthlyPaymentAmount = calculateAnnuityPayment(loan, termMonths, monthlyRate);
+            
+            // Общая сумма выплат
+            const totalPayment = monthlyPaymentAmount * termMonths;
+            
+            // Переплата
+            const overpaymentAmount = totalPayment - loan;
+            
+            // Отображение результатов
+            if (calcLoanAmount) calcLoanAmount.textContent = formatPrice(loan);
+            if (calcMonthlyPayment) calcMonthlyPayment.textContent = formatPrice(monthlyPaymentAmount);
+            if (calcOverpayment) calcOverpayment.textContent = formatPrice(overpaymentAmount);
+            if (calcTotalAmount) calcTotalAmount.textContent = formatPrice(totalPayment + initialAmount);
+        }
+        
+        function calculateAnnuityPayment(loanAmount, termMonths, monthlyRate) {
+            if (monthlyRate === 0) {
+                return loanAmount / termMonths;
+            }
+            
+            const coefficient = (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
+                              (Math.pow(1 + monthlyRate, termMonths) - 1);
+            
+            return Math.round(loanAmount * coefficient);
+        }
+    }
+    
+    // Показать уведомление
+    function showNotification(message, type = 'success') {
+        // Проверяем, есть ли уже уведомление
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <span>${message}</span>
+            <button class="notification-close">&times;</button>
+        `;
+        
+        // Стили для уведомления
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : type === 'info' ? '#2196F3' : '#ffc107'};
+            color: white;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 300px;
+            max-width: 500px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        // Кнопка закрытия
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        });
+        
+        // Добавляем в DOM
+        document.body.appendChild(notification);
+        
+        // Автоматическое удаление через 5 секунд
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+        
+        // Добавляем CSS анимации если их нет
+        if (!document.getElementById('notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+                .notification-close {
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 20px;
+                    cursor: pointer;
+                    margin-left: 15px;
+                    line-height: 1;
+                }
             `;
+            document.head.appendChild(style);
         }
     }
     
     // Показать ошибку
-    showError(message) {
-        if (!this.carDetailsContent) return;
-        
-        this.carDetailsContent.innerHTML = `
-            <div class="error-message">
-                <h3>Ошибка</h3>
-                <p>${message}</p>
-                <a href="cars.html" class="btn btn-small">Вернуться в каталог</a>
-            </div>
-        `;
+    function showError(message) {
+        const container = document.querySelector('.car-details-container') || document.querySelector('main');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-container" style="text-align: center; padding: 60px 20px;">
+                    <h2 style="color: #dc3545; margin-bottom: 20px;">Ошибка</h2>
+                    <p style="color: #666; margin-bottom: 30px; font-size: 18px;">${message}</p>
+                    <button class="btn btn-primary" onclick="window.location.href='cars.html'">
+                        Вернуться к каталогу
+                    </button>
+                </div>
+            `;
+        } else {
+            // Если контейнер не найден, показываем простой алерт
+            alert(message + '\n\nПерейдите на страницу каталога автомобилей.');
+            window.location.href = 'cars.html';
+        }
     }
-}
-
-// Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM загружен, инициализируем CarDetailsView...');
-    window.carDetailsView = new CarDetailsView();
 });

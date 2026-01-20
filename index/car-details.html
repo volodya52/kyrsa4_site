@@ -13,7 +13,6 @@
                 <div class="logo">
                     <span class="logo-text">АВТОСАЛОН</span>
                 </div>
-                
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="index.html">Главная</a></li>
                     <li><a href="cars.html">Автомобили</a></li>
@@ -33,179 +32,330 @@
         </div>
     </header>
 
-    <main class="main-content">
-        <section class="car-details-page">
-            <div class="container">
-                <a href="cars.html" class="back-button">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                    Назад к каталогу
-                </a>
-                
-                <div id="carDetailsContent">
-                    <div class="loading-spinner">
-                        <div class="spinner"></div>
-                        <p>Загрузка информации об автомобиле...</p>
+    <main class="car-details-page">
+        <div class="container">
+            <a href="cars.html" class="back-button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Назад к каталогу
+            </a>
+            
+            <div class="car-details-container">
+                <!-- Левая колонка - изображение автомобиля -->
+                <div class="car-image-section">
+                    <div class="car-details-image-container">
+                        <img id="carImage" src="" alt="Автомобиль" class="car-details-image">
+                    </div>
+                </div>
+
+                <!-- Правая колонка - информация и кнопки -->
+                <div class="car-info-section">
+                    <!-- Заголовок и цена -->
+                    <div class="car-header">
+                        <div class="car-header-content">
+                            <div>
+                                <h1 class="car-title" id="carTitle">Загрузка...</h1>
+                                <div class="car-status-badge" id="carStatusBadge"></div>
+                            </div>
+                            <div class="car-price-container">
+                                <span class="car-price" id="carPrice">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Описание -->
+                    <div class="car-description">
+                        <h3>Описание</h3>
+                        <p id="carDescription">Загрузка описания...</p>
+                    </div>
+                    
+                    <!-- Таблица характеристик -->
+                    <div class="car-specifications">
+                        <h3>Характеристики</h3>
+                        <table class="specs-table">
+                            <tr>
+                                <td>Марка:</td>
+                                <td id="carBrand">-</td>
+                            </tr>
+                            <tr>
+                                <td>Модель:</td>
+                                <td id="carModel">-</td>
+                            </tr>
+                            <tr>
+                                <td>Год выпуска:</td>
+                                <td id="carYear">-</td>
+                            </tr>
+                            <tr>
+                                <td>Пробег:</td>
+                                <td id="carMileage">-</td>
+                            </tr>
+                            <tr>
+                                <td>Двигатель:</td>
+                                <td id="carEngine">-</td>
+                            </tr>
+                            <tr>
+                                <td>Мощность:</td>
+                                <td id="carHorsepower">-</td>
+                            </tr>
+                            <tr>
+                                <td>Коробка передач:</td>
+                                <td id="carTransmission">-</td>
+                            </tr>
+                            <tr>
+                                <td>Тип топлива:</td>
+                                <td id="carFuel">-</td>
+                            </tr>
+                            <tr>
+                                <td>Тип кузова:</td>
+                                <td id="carBody">-</td>
+                            </tr>
+                            <tr>
+                                <td>Цвет:</td>
+                                <td id="carColor">-</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <!-- Кнопки действий -->
+                    <div class="car-actions">
+                        <button class="btn btn-buy" id="buyCar">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            Купить автомобиль
+                        </button>
+                        <button class="btn btn-credit" id="creditBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                            Рассчитать кредит
+                        </button>
+                        <button class="btn btn-favorite" id="favoriteBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            </svg>
+                            В избранное
+                        </button>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
     </main>
 
-    <div class="modal-overlay" id="testDriveModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Запись на тест-драйв</h2>
-                <button class="modal-close" id="closeTestDriveModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="testDriveName">Имя</label>
-                    <input type="text" id="testDriveName" placeholder="Введите ваше имя" required>
-                </div>
-                <div class="form-group">
-                    <label for="testDrivePhone">Телефон</label>
-                    <input type="tel" id="testDrivePhone" placeholder="+7 (___) ___-__-__" required>
-                </div>
-                <div class="form-group">
-                    <label for="testDriveEmail">Email</label>
-                    <input type="email" id="testDriveEmail" placeholder="Введите ваш email" required>
-                </div>
-                <div class="form-group">
-                    <label for="testDriveDate">Предпочтительная дата</label>
-                    <input type="date" id="testDriveDate" required>
-                </div>
-                <div class="form-group">
-                    <label for="testDriveTime">Предпочтительное время</label>
-                    <select id="testDriveTime" required>
-                        <option value="">Выберите время</option>
-                        <option value="10:00">10:00</option>
-                        <option value="11:00">11:00</option>
-                        <option value="12:00">12:00</option>
-                        <option value="13:00">13:00</option>
-                        <option value="14:00">14:00</option>
-                        <option value="15:00">15:00</option>
-                        <option value="16:00">16:00</option>
-                        <option value="17:00">17:00</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="testDriveMessage">Дополнительные пожелания</label>
-                    <textarea id="testDriveMessage" placeholder="Укажите дополнительную информацию"></textarea>
-                </div>
-                <p id="testDriveCarInfo" style="font-size: 14px; color: #666; margin-bottom: 20px;"></p>
-            </div>
-            <div class="form-actions">
-                <button class="btn-secondary" id="cancelTestDriveBtn">Отмена</button>
-                <button class="btn-primary" id="confirmTestDriveBtn">Записаться</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно Trade-In -->
-    <div class="modal-overlay" id="tradeInModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Trade-In: Оценка вашего автомобиля</h2>
-                <button class="modal-close" id="closeTradeInModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="tradeInBrand">Марка вашего автомобиля</label>
-                    <input type="text" id="tradeInBrand" placeholder="Например: Toyota" required>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInModel">Модель</label>
-                    <input type="text" id="tradeInModel" placeholder="Например: Camry" required>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInYear">Год выпуска</label>
-                    <input type="number" id="tradeInYear" placeholder="Например: 2018" min="1990" max="2024" required>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInMileage">Пробег (км)</label>
-                    <input type="number" id="tradeInMileage" placeholder="Например: 75000" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInCondition">Состояние</label>
-                    <select id="tradeInCondition" required>
-                        <option value="">Выберите состояние</option>
-                        <option value="Отличное">Отличное</option>
-                        <option value="Хорошее">Хорошее</option>
-                        <option value="Удовлетворительное">Удовлетворительное</option>
-                        <option value="Требует ремонта">Требует ремонта</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInName">Ваше имя</label>
-                    <input type="text" id="tradeInName" placeholder="Введите ваше имя" required>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInPhone">Телефон</label>
-                    <input type="tel" id="tradeInPhone" placeholder="+7 (___) ___-__-__" required>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInEmail">Email</label>
-                    <input type="email" id="tradeInEmail" placeholder="Введите ваш email" required>
-                </div>
-                <div class="form-group">
-                    <label for="tradeInMessage">Дополнительная информация</label>
-                    <textarea id="tradeInMessage" placeholder="Опишите особенности вашего автомобиля"></textarea>
-                </div>
-                <p id="tradeInCarInfo" style="font-size: 14px; color: #666; margin-bottom: 20px;"></p>
-            </div>
-            <div class="form-actions">
-                <button class="btn-secondary" id="cancelTradeInBtn">Отмена</button>
-                <button class="btn-primary" id="confirmTradeInBtn">Отправить заявку</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Модальные окна остаются без изменений -->
     <!-- Модальное окно покупки -->
     <div class="modal-overlay" id="buyModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Покупка автомобиля</h2>
+                <h2>Оформление покупки</h2>
                 <button class="modal-close" id="closeBuyModal">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="buyName">Имя</label>
-                    <input type="text" id="buyName" placeholder="Введите ваше имя" required>
-                </div>
-                <div class="form-group">
-                    <label for="buyPhone">Телефон</label>
-                    <input type="tel" id="buyPhone" placeholder="+7 (___) ___-__-__" required>
-                </div>
-                <div class="form-group">
-                    <label for="buyEmail">Email</label>
-                    <input type="email" id="buyEmail" placeholder="Введите ваш email" required>
-                </div>
-                <div class="form-group">
-                    <label for="buyPaymentMethod">Способ оплаты</label>
-                    <select id="buyPaymentMethod" required>
-                        <option value="">Выберите способ оплаты</option>
-                        <option value="Наличные">Наличные</option>
-                        <option value="Кредит">Кредит</option>
-                        <option value="Рассрочка">Рассрочка</option>
-                        <option value="Trade-In">Trade-In</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="buyMessage">Дополнительные пожелания</label>
-                    <textarea id="buyMessage" placeholder="Укажите дополнительную информацию"></textarea>
-                </div>
-                <p id="buyCarInfo" style="font-size: 14px; color: #666; margin-bottom: 20px;"></p>
+                <form id="buyForm">
+                    <div class="form-group">
+                        <label for="buyName">Имя *</label>
+                        <input type="text" id="buyName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="buyPhone">Телефон *</label>
+                        <input type="tel" id="buyPhone" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="buyEmail">Email *</label>
+                        <input type="email" id="buyEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="buyPaymentMethod">Способ оплаты</label>
+                        <select id="buyPaymentMethod">
+                            <option value="cash">Наличные</option>
+                            <option value="credit">Кредит</option>
+                            <option value="card">Банковская карта</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="buyMessage">Комментарий</label>
+                        <textarea id="buyMessage" rows="3" placeholder="Ваши пожелания..."></textarea>
+                    </div>
+                </form>
             </div>
-            <div class="form-actions">
-                <button class="btn-secondary" id="cancelBuyBtn">Отмена</button>
-                <button class="btn-primary" id="confirmBuyBtn">Отправить заявку</button>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBuyBtn">Отмена</button>
+                <button class="btn btn-primary" id="confirmBuyBtn">Отправить заявку</button>
             </div>
         </div>
     </div>
 
-    <!-- Футер -->
+    <!-- Модальное окно кредитного калькулятора -->
+    <div class="modal-overlay" id="creditModal">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h2>Кредитный калькулятор</h2>
+                <button class="modal-close" id="closeCreditModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="credit-calculator-container">
+                    <div class="car-info-summary">
+                        <div class="car-info-image">
+                            <img id="calcCarImage" src="" alt="Автомобиль">
+                        </div>
+                        <div class="car-info-details">
+                            <h3 id="calcCarTitle"></h3>
+                            <div class="car-price" id="calcCarPrice"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="calculator-form">
+                        <div class="calculator-inputs">
+                            <div class="form-group">
+                                <label for="calcInitialPayment">Первоначальный взнос</label>
+                                <div class="input-with-slider">
+                                    <input type="number" id="calcInitialPayment" min="0" placeholder="200000">
+                                    <div class="slider-container">
+                                        <input type="range" id="calcInitialPaymentRange" min="0" max="100" value="20" step="5">
+                                        <div class="slider-labels">
+                                            <span>0%</span>
+                                            <span>100%</span>
+                                        </div>
+                                    </div>
+                                    <div class="percent-label" id="calcInitialPaymentPercent">20% от стоимости</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="calcCreditTerm">Срок кредита</label>
+                                <div class="input-with-slider">
+                                    <input type="number" id="calcCreditTerm" min="12" max="84" value="36" step="12">
+                                    <div class="slider-container">
+                                        <input type="range" id="calcCreditTermRange" min="12" max="84" value="36" step="12">
+                                        <div class="slider-labels">
+                                            <span>1 год</span>
+                                            <span>7 лет</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="calcInterestRate">Процентная ставка</label>
+                                <select id="calcInterestRate">
+                                    <option value="8.5">8.5% (Базовая)</option>
+                                    <option value="7.9">7.9% (С господдержкой)</option>
+                                    <option value="9.9">9.9% (Стандартная)</option>
+                                    <option value="11.5">11.5% (Без первоначального взноса)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="calculation-results">
+                            <h4>Результаты расчета</h4>
+                            <div class="results-grid">
+                                <div class="result-item">
+                                    <span class="result-label">Сумма кредита:</span>
+                                    <span class="result-value" id="calcLoanAmount">0 ₽</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Ежемесячный платеж:</span>
+                                    <span class="result-value" id="calcMonthlyPayment">0 ₽</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Переплата по кредиту:</span>
+                                    <span class="result-value" id="calcOverpayment">0 ₽</span>
+                                </div>
+                                <div class="result-item total">
+                                    <span class="result-label">Общая сумма выплат:</span>
+                                    <span class="result-value" id="calcTotalAmount">0 ₽</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-calculate" id="calcCalculateCredit">Рассчитать</button>
+                    
+                    <div class="calculator-info">
+                        <p><strong>Примечание:</strong> Расчет является предварительным. Для получения точных условий кредита обратитесь к менеджеру.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelCreditBtn">Закрыть</button>
+                <button class="btn btn-primary" id="applyCreditBtn">Подать заявку на кредит</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна входа/регистрации -->
+    <div class="modal-overlay" id="loginModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Вход в систему</h2>
+                <button class="modal-close" id="closeLoginModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Введите ваш email" required>
+                    <div class="error-message" id="loginEmailError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="Введите ваш пароль" required>
+                    <div class="error-message" id="loginPasswordError"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelLoginBtn">Отмена</button>
+                <button class="btn btn-primary" id="confirmLoginBtn">Войти</button>
+            </div>
+            <div class="modal-footer-links">
+                <p>Нет аккаунта? <a href="#" id="showRegisterModalLink">Зарегистрироваться</a></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="registerModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Регистрация</h2>
+                <button class="modal-close" id="closeRegisterModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="regName">Имя</label>
+                    <input type="text" id="regName" placeholder="Введите ваше имя" required>
+                    <div class="error-message" id="regNameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Телефон</label>
+                    <input type="tel" id="regPhone" placeholder="Введите номер телефона" required>
+                    <div class="error-message" id="regPhoneError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email</label>
+                    <input type="email" id="regEmail" placeholder="Введите ваш email" required>
+                    <div class="error-message" id="regEmailError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Пароль</label>
+                    <input type="password" id="regPassword" placeholder="Придумайте пароль" required>
+                    <div class="error-message" id="regPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Подтвердите пароль</label>
+                    <input type="password" id="regConfirmPassword" placeholder="Повторите пароль" required>
+                    <div class="error-message" id="regConfirmPasswordError"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelRegisterBtn">Отмена</button>
+                <button class="btn btn-primary" id="confirmRegisterBtn">Зарегистрироваться</button>
+            </div>
+            <div class="modal-footer-links">
+                <p>Уже есть аккаунт? <a href="#" id="showLoginModalLink">Войти</a></p>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -245,6 +395,7 @@
 
     <script src="../view/SignInView.js"></script>
     <script src="../view/AdminUserView.js"></script>
+    <script src="../view/AdminCarsView.js"></script>
     <script src="../view/CarDetailsView.js"></script>
 </body>
 </html>
