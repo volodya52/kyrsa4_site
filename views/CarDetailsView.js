@@ -776,6 +776,31 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!calcInitialPayment || !calcInitialPaymentRange) return;
         
+        // Настройка процентных ставок в выпадающем списке
+        if (calcInterestRate) {
+            // Удаляем старые опции
+            calcInterestRate.innerHTML = '';
+            
+            // Добавляем новые процентные ставки
+            const rates = [
+                { value: 16.9, label: 'ВТБ наличные - 16.9%' },
+                { value: 14.9, label: 'Специальная программа - 14.9%' },
+                { value: 18.99, label: 'Стандартный - 18.99%' },
+                { value: 25.5, label: 'Автокредит - 25.5%' },
+                { value: 22.9, label: 'Экспресс-кредит - 22.9%' }
+            ];
+            
+            rates.forEach(rate => {
+                const option = document.createElement('option');
+                option.value = rate.value;
+                option.textContent = rate.label;
+                calcInterestRate.appendChild(option);
+            });
+            
+            // Устанавливаем ВТБ наличные как значение по умолчанию
+            calcInterestRate.value = 16.9;
+        }
+        
         // Устанавливаем начальные значения
         const initialAmount = Math.round(carPriceValue * 0.2);
         calcInitialPayment.value = initialAmount;
@@ -840,10 +865,21 @@ document.addEventListener('DOMContentLoaded', function() {
             calcInitialPaymentPercent.textContent = `${percent}% от стоимости`;
         }
         
+        // Функция расчета аннуитетного платежа по формуле:
+        // A = P * (r * (1 + r)^N) / ((1 + r)^N - 1)
+        function calculateAnnuityPayment(P, N, r) {
+            if (r === 0) {
+                return P / N;
+            }
+            
+            const coefficient = (r * Math.pow(1 + r, N)) / (Math.pow(1 + r, N) - 1);
+            return Math.round(P * coefficient);
+        }
+        
         function calculateCredit() {
             const initialAmount = parseInt(calcInitialPayment.value) || 0;
             const termMonths = parseInt(calcCreditTerm.value) || 36;
-            const annualRate = parseFloat(calcInterestRate.value) || 8.5;
+            const annualRate = parseFloat(calcInterestRate.value) || 16.9;
             
             if (initialAmount >= carPriceValue) {
                 showNotification('Первоначальный взнос не может быть больше стоимости автомобиля', 'error');
@@ -860,17 +896,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (calcMonthlyPayment) calcMonthlyPayment.textContent = formatPrice(monthlyPaymentAmount);
             if (calcOverpayment) calcOverpayment.textContent = formatPrice(overpaymentAmount);
             if (calcTotalAmount) calcTotalAmount.textContent = formatPrice(totalPayment + initialAmount);
-        }
-        
-        function calculateAnnuityPayment(loanAmount, termMonths, monthlyRate) {
-            if (monthlyRate === 0) {
-                return loanAmount / termMonths;
-            }
-            
-            const coefficient = (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
-                              (Math.pow(1 + monthlyRate, termMonths) - 1);
-            
-            return Math.round(loanAmount * coefficient);
         }
     }
     
