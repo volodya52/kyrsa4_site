@@ -569,7 +569,6 @@ isCarInFavorites(userId, carId) {
                 params.push(filters.body);
             }
 
-            //query += ' AND Status = "В наличии" ORDER BY ID DESC';
 
              query += ' ORDER BY ID DESC';
 
@@ -583,85 +582,7 @@ isCarInFavorites(userId, carId) {
         });
     }
 
-    createTradeIn(tradeInData) {
-        return new Promise((resolve, reject) => {
-            this.db.run(
-                `INSERT INTO TradeIn (
-                    User_ID, Car_ID, Brand, Model, Year, Mileage,
-                    Estimated_price, Condition, Phone
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    tradeInData.userId, tradeInData.carId || null, tradeInData.brand,
-                    tradeInData.model, tradeInData.year, tradeInData.mileage,
-                    tradeInData.estimated_price || null, tradeInData.condition,
-                    tradeInData.phone
-                ],
-                function(err) {
-                    if (err) {
-                        reject({ success: false, error: err.message });
-                    } else {
-                        resolve({ success: true, id: this.lastID });
-                    }
-                }
-            );
-        });
-    }
-
-    getUserTradeIns(userId) {
-        return new Promise((resolve, reject) => {
-            this.db.all(
-                `SELECT t.*, c.Brand as Car_Brand, c.Model as Car_Model
-                 FROM TradeIn t
-                 LEFT JOIN Cars c ON t.Car_ID = c.ID
-                 WHERE t.User_ID = ?
-                 ORDER BY t.ID DESC`,
-                [userId],
-                (err, rows) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(rows || []);
-                    }
-                }
-            );
-        });
-    }
-
-    getAllTradeIns() {
-        return new Promise((resolve, reject) => {
-            this.db.all(
-                `SELECT t.*, u.Name as User_Name, u.Email as User_Email,
-                        c.Brand as Car_Brand, c.Model as Car_Model
-                 FROM TradeIn t
-                 LEFT JOIN Users u ON t.User_ID = u.ID
-                 LEFT JOIN Cars c ON t.Car_ID = c.ID
-                 ORDER BY t.ID DESC`,
-                (err, rows) => {
-                    if (err) {
-                        reject(err);
-                    } else {
-                        resolve(rows || []);
-                    }
-                }
-            );
-        });
-    }
-
-    updateTradeInStatus(id, status) {
-        return new Promise((resolve, reject) => {
-            this.db.run(
-                'UPDATE TradeIn SET Status = ? WHERE ID = ?',
-                [status, id],
-                function(err) {
-                    if (err) {
-                        reject({ success: false, error: err.message });
-                    } else {
-                        resolve({ success: true, changes: this.changes });
-                    }
-                }
-            );
-        });
-    }
+    
 
     getNewsById(id) {
     return new Promise((resolve, reject) => {
