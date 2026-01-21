@@ -1,5 +1,5 @@
-// view/NewsAdminView.js
-class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
+// views/NewsAdminView.js - UPDATED FOR MVC
+class NewsAdminView {
     constructor() {
         console.log('=== NewsAdminView initializing ===');
         
@@ -15,13 +15,15 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
         // Модальные окна
         this.newsFormModal = document.getElementById('newsFormModal');
         
-        // Получаем токен
-        this.token = localStorage.getItem('token');
-        this.user = null;
+        // Initialize Models and Controllers
+        this.userModel = new UserModel();
+        this.newsController = new NewsController();
+        this.newsController.setView(this, true);
+        
         this.news = [];
         this.currentNewsId = null;
         
-        console.log('Token exists:', !!this.token);
+        console.log('User model initialized:', this.userModel);
         
         this.init();
     }
@@ -32,7 +34,7 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
         // Сначала показываем загрузку
         this.showLoading();
         
-        // Проверяем авторизацию
+        // Проверяем авторизацию через модель
         const authResult = await this.checkAuth();
         console.log('Auth result:', authResult);
         
@@ -52,110 +54,32 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
         this.setupUI();
         this.setupEventListeners();
         
-        // Загружаем новости
+        // Загружаем новости через контроллер
         await this.loadNews();
     }
     
     async checkAuth() {
         console.log('=== Checking authentication ===');
         
-        if (!this.token) {
-            console.log('No token in localStorage');
+        // Используем UserModel для проверки авторизации
+        const validation = await this.userModel.validateToken();
+        
+        if (!validation.isValid) {
             return { 
                 isAuthenticated: false, 
                 isAdmin: false, 
-                error: 'Токен не найден' 
+                error: 'Требуется авторизация' 
             };
         }
         
-        try {
-            console.log('Making auth request with token...');
-            
-            // Делаем запрос к API
-            const response = await fetch('/api/user', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
-            
-            console.log('Auth response status:', response.status);
-            console.log('Auth response headers:', response.headers);
-            
-            if (response.status === 401) {
-                console.log('Token is invalid or expired');
-                localStorage.removeItem('token');
-                return { 
-                    isAuthenticated: false, 
-                    isAdmin: false, 
-                    error: 'Сессия истекла. Пожалуйста, войдите снова.' 
-                };
-            }
-            
-            if (!response.ok) {
-                console.log('Auth failed with status:', response.status);
-                return { 
-                    isAuthenticated: false, 
-                    isAdmin: false, 
-                    error: `Ошибка сервера: ${response.status}` 
-                };
-            }
-            
-            const data = await response.json();
-            console.log('Auth response data:', data);
-            
-            if (!data.success) {
-                console.log('Auth API returned error:', data.error);
-                return { 
-                    isAuthenticated: false, 
-                    isAdmin: false, 
-                    error: data.error || 'Ошибка авторизации' 
-                };
-            }
-            
-            this.user = data.user;
-            console.log('User authenticated successfully:', this.user);
-            
-            // Проверяем админские права
-            const isAdmin = this.isUserAdmin(this.user);
-            console.log('Is user admin?', isAdmin);
-            
-            return { 
-                isAuthenticated: true, 
-                isAdmin: isAdmin, 
-                user: this.user 
-            };
-            
-        } catch (error) {
-            console.error('Auth check error:', error);
-            return { 
-                isAuthenticated: false, 
-                isAdmin: false, 
-                error: 'Ошибка соединения с сервером' 
-            };
-        }
-    }
-    
-    isUserAdmin(user) {
-        if (!user) return false;
+        const isAdmin = this.userModel.isAdmin();
+        console.log('Is user admin?', isAdmin);
         
-        console.log('Checking admin status for user:', user);
-        
-        // Проверяем разными способами
-        const roleName = (user.role || user.Role_Name || '').toLowerCase();
-        const roleId = user.role_id || user.Role_ID;
-        
-        console.log('Role name:', roleName);
-        console.log('Role ID:', roleId);
-        
-        // Различные варианты названия роли администратора
-        const isAdmin = roleName.includes('админ') || 
-                       roleName.includes('admin') ||
-                       roleName === 'администратор' ||
-                       roleName === 'administrator' ||
-                       roleId === 1;
-        
-        console.log('Admin check result:', isAdmin);
-        return isAdmin;
+        return { 
+            isAuthenticated: true, 
+            isAdmin: isAdmin, 
+            user: validation.user 
+        };
     }
     
     setupUI() {
@@ -226,23 +150,9 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
         console.log('=== Loading news ===');
         
         try {
-            const response = await fetch('/api/news');
-            console.log('News API response status:', response.status);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            console.log('News data:', data);
-            
-            if (data.success) {
-                this.news = data.news || [];
-                console.log(`Loaded ${this.news.length} news items`);
-                this.renderNewsTable();
-            } else {
-                throw new Error(data.error || 'Ошибка загрузки новостей');
-            }
+            this.news = await this.newsController.loadNews();
+            console.log(`Loaded ${this.news.length} news items`);
+            this.renderNewsTable();
         } catch (error) {
             console.error('Error loading news:', error);
             this.showError('Ошибка загрузки новостей. Попробуйте обновить страницу.');
@@ -461,28 +371,27 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
         if (!carId) return;
         
         try {
-            const response = await fetch(`/api/cars/${carId}`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    const car = data.car;
-                    const carInfo = document.getElementById('carInfo');
-                    carInfo.innerHTML = `
-                        <div class="car-info-image">
-                            <img src="${car.image_url || 'https://via.placeholder.com/100x60?text=Авто'}" 
-                                 alt="${car.brand} ${car.model}"
-                                 style="width: 100px; height: auto; border-radius: 4px;">
-                        </div>
-                        <div class="car-info-details">
-                            <h4 style="margin: 0 0 5px 0;">${car.brand} ${car.model}</h4>
-                            <p style="margin: 0; color: #666;">${car.year} год</p>
-                            <p style="margin: 5px 0 0 0; font-weight: bold; color: #007bff;">
-                                ${car.price.toLocaleString('ru-RU')} ₽
-                            </p>
-                        </div>
-                    `;
-                    carInfo.style.display = 'flex';
-                }
+            // Используем CarModel через новый контроллер
+            const carModel = new CarModel();
+            const car = await carModel.getCarById(carId);
+            
+            if (car) {
+                const carInfo = document.getElementById('carInfo');
+                carInfo.innerHTML = `
+                    <div class="car-info-image">
+                        <img src="${car.image_url || 'https://via.placeholder.com/100x60?text=Авто'}" 
+                             alt="${car.brand} ${car.model}"
+                             style="width: 100px; height: auto; border-radius: 4px;">
+                    </div>
+                    <div class="car-info-details">
+                        <h4 style="margin: 0 0 5px 0;">${car.brand} ${car.model}</h4>
+                        <p style="margin: 0; color: #666;">${car.year} год</p>
+                        <p style="margin: 5px 0 0 0; font-weight: bold; color: #007bff;">
+                            ${car.price ? car.price.toLocaleString('ru-RU') : '0'} ₽
+                        </p>
+                    </div>
+                `;
+                carInfo.style.display = 'flex';
             }
         } catch (error) {
             console.error('Error loading car info:', error);
@@ -521,39 +430,14 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
         console.log('Saving news data:', newsData);
         
         try {
-            let response;
+            const result = await this.newsController.saveNews(newsData, newsId || null);
             
-            if (newsId) {
-                // Обновление
-                response = await fetch(`/api/admin/news/${newsId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.token}`
-                    },
-                    body: JSON.stringify(newsData)
-                });
-            } else {
-                // Создание
-                response = await fetch('/api/admin/news', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${this.token}`
-                    },
-                    body: JSON.stringify(newsData)
-                });
-            }
-            
-            const data = await response.json();
-            console.log('Save response:', data);
-            
-            if (data.success) {
+            if (result.success) {
                 this.closeNewsForm();
                 await this.loadNews();
                 this.showSuccessMessage(newsId ? 'Новость обновлена' : 'Новость добавлена');
             } else {
-                alert(data.error || 'Ошибка сохранения');
+                alert(result.error || 'Ошибка сохранения');
             }
         } catch (error) {
             console.error('Error saving news:', error);
@@ -571,20 +455,13 @@ class NewsAdminView {  // ИЗМЕНЕНО: было class NewsCRUDView
         }
         
         try {
-            const response = await fetch(`/api/admin/news/${newsId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            const result = await this.newsController.deleteNews(newsId);
             
-            const data = await response.json();
-            
-            if (data.success) {
+            if (result.success) {
                 await this.loadNews();
                 this.showSuccessMessage('Новость удалена');
             } else {
-                alert(data.error || 'Ошибка удаления');
+                alert(result.error || 'Ошибка удаления');
             }
         } catch (error) {
             console.error('Error deleting news:', error);
@@ -682,7 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('=== DOM loaded, initializing NewsAdminView ===');
     
     try {
-        window.newsAdminView = new NewsAdminView(); // ИЗМЕНЕНО: было window.newsCRUDView
+        window.newsAdminView = new NewsAdminView();
         console.log('NewsAdminView initialized successfully');
     } catch (error) {
         console.error('Error initializing NewsAdminView:', error);
@@ -701,23 +578,3 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 });
-
-// Добавляем глобальные функции для отладки
-window.debugNews = function() {
-    console.log('=== NewsAdminView Debug ===');
-    console.log('Token:', localStorage.getItem('token'));
-    console.log('View instance:', window.newsAdminView); // ИЗМЕНЕНО: было window.newsCRUDView
-    
-    // Проверяем авторизацию
-    fetch('/api/user', {
-        headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-    })
-    .then(response => {
-        console.log('Auth check status:', response.status);
-        return response.json();
-    })
-    .then(data => console.log('Auth check data:', data))
-    .catch(error => console.error('Auth check error:', error));
-};

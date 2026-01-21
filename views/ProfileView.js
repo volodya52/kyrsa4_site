@@ -1,4 +1,4 @@
-// ProfileView.js - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// ProfileView.js - UPDATED FOR MVC
 document.addEventListener('DOMContentLoaded', function() {
     // Элементы страницы
     const userNameDisplay = document.getElementById('userNameDisplay');
@@ -14,29 +14,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const favoritesContent = document.getElementById('favoritesContent');
     const favoritesCount = document.getElementById('favoritesCount');
     
-    // Текущий пользователь
-    let currentUser = null;
+    // Initialize Controllers and Models
+    const userModel = new UserModel();
+    const favoriteController = new FavoriteController();
+    const authController = new AuthController();
     
     // Инициализация страницы профиля
     async function initProfilePage() {
         console.log('=== НАЧАЛО initProfilePage ===');
         
-        // Проверяем авторизацию
-        const userData = localStorage.getItem('user_data');
-        const token = localStorage.getItem('auth_token');
+        // Проверяем авторизацию через модель
+        const user = userModel.getCurrentUser();
+        const token = userModel.getToken();
         
-        console.log('Данные из localStorage:', {
-            userData: userData,
+        console.log('Данные из модели:', {
+            user: user,
             token: token,
-            hasUserData: !!userData,
+            hasUser: !!user,
             hasToken: !!token
         });
         
-        if (!userData || !token) {
-            // Если пользователь не авторизован, перенаправляем на главную
+        if (!user || !token) {
             console.log('❌ Пользователь не авторизован, перенаправляю на главную');
-            console.log('userData отсутствует:', !userData);
-            console.log('token отсутствует:', !token);
             window.location.href = 'index.html';
             return;
         }
@@ -44,25 +43,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Есть данные для инициализации профиля');
         
         try {
-            // Парсим данные пользователя
-            currentUser = JSON.parse(userData);
-            console.log('Текущий пользователь из localStorage:', currentUser);
+            // Сразу обновляем интерфейс данными из модели
+            updateUserProfile(user);
             
-            // Сразу обновляем интерфейс данными из localStorage
-            updateUserProfile(currentUser);
+            console.log('✅ Интерфейс обновлен данными из модели');
             
-            console.log('✅ Интерфейс обновлен данными из localStorage');
-            
-            // Пробуем загрузить свежие данные с сервера (но не блокируем интерфейс)
-            loadUserProfile().catch(error => {
-                console.error('Ошибка загрузки профиля с сервера:', error);
-                // Не перенаправляем пользователя, используем данные из localStorage
-            });
+            // Пробуем загрузить свежие данные с сервера
+            await validateAndUpdateProfile();
             
             // Загружаем избранные автомобили
-            loadFavorites().catch(error => {
-                console.error('Ошибка загрузки избранного:', error);
-            });
+            await loadFavorites();
             
             // Назначаем обработчики событий
             setupEventListeners();
@@ -71,11 +61,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('❌ Ошибка инициализации профиля:', error);
-            // Не перенаправляем сразу, покажем данные из localStorage
-            if (currentUser) {
-                updateUserProfile(currentUser);
+            // Используем данные из модели если есть
+            if (user) {
+                updateUserProfile(user);
             } else {
-                // Только если совсем не можем получить данные
                 window.location.href = 'index.html';
             }
         }
@@ -83,55 +72,19 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('=== КОНЕЦ initProfilePage ===');
     }
     
-    // Загрузка профиля пользователя с сервера
-    async function loadUserProfile() {
+    // Валидация и обновление профиля
+    async function validateAndUpdateProfile() {
         try {
-            const token = localStorage.getItem('auth_token');
+            const validation = await userModel.validateToken();
             
-            console.log('Загружаю профиль с сервера, токен:', token ? 'есть' : 'нет');
-            
-            if (!token) {
-                console.log('Токен отсутствует, пропускаю загрузку с сервера');
-                return;
-            }
-            
-            const response = await fetch('/api/user', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            console.log('Ответ сервера на /api/user:', {
-                status: response.status,
-                ok: response.ok
-            });
-            
-            // Если получили 401, не перенаправляем, просто не обновляем данные
-            if (response.status === 401) {
-                console.warn('Токен недействителен, но продолжаем использовать данные из localStorage');
-                return;
-            }
-            
-            if (!response.ok) {
-                console.warn('Ошибка сервера, но продолжаем использовать данные из localStorage');
-                return;
-            }
-            
-            const data = await response.json();
-            console.log('Данные профиля с сервера:', data);
-            
-            if (data.success && data.user) {
-                // Обновляем данные пользователя в localStorage
-                localStorage.setItem('user_data', JSON.stringify(data.user));
-                currentUser = data.user;
-                updateUserProfile(data.user);
+            if (validation.isValid && validation.user) {
+                updateUserProfile(validation.user);
                 console.log('✅ Профиль обновлен данными с сервера');
+            } else {
+                console.warn('Токен недействителен, но продолжаем использовать данные из модели');
             }
-            
         } catch (error) {
-            console.error('Ошибка загрузки профиля с сервера:', error);
-            // Не показываем сообщение об ошибке пользователю
-            // Просто продолжаем использовать данные из localStorage
+            console.error('Ошибка валидации профиля:', error);
         }
     }
     
@@ -153,73 +106,41 @@ document.addEventListener('DOMContentLoaded', function() {
             userRoleDetail.textContent = user.role || 'Клиент';
         }
         
-        // Отображаем аватар (если есть в localStorage)
-        updateAvatar();
+        // Отображаем аватар
+        updateAvatar(user);
     }
     
     // Обновление аватара
-    function updateAvatar() {
-        if (!currentUser) return;
+    function updateAvatar(user) {
+        if (!user) return;
         
         // Проверяем, есть ли сохраненный аватар в localStorage
-        const savedAvatar = localStorage.getItem(`avatar_${currentUser.id}`);
+        const savedAvatar = localStorage.getItem(`avatar_${user.id}`);
         
         if (savedAvatar) {
-            // Показываем сохраненный аватар
             avatarImage.src = savedAvatar;
             avatarImage.style.display = 'block';
             avatarPlaceholder.style.display = 'none';
         } else {
-            // Показываем инициал имени
-            const firstLetter = (currentUser.name || 'П').charAt(0).toUpperCase();
+            const firstLetter = (user.name || 'П').charAt(0).toUpperCase();
             avatarPlaceholder.textContent = firstLetter;
             avatarPlaceholder.style.display = 'flex';
             avatarImage.style.display = 'none';
         }
     }
     
-    // Загрузка избранных автомобилей с сервера
+    // Загрузка избранных автомобилей
     async function loadFavorites() {
         try {
-            const token = localStorage.getItem('auth_token');
-            if (!token) {
-                renderNoFavorites();
-                return;
-            }
-            
-            console.log('Загрузка избранных автомобилей...');
-            
-            const response = await fetch('/api/user/favorites', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            console.log('Ответ сервера на /api/user/favorites:', {
-                status: response.status,
-                ok: response.ok
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Ошибка сервера: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            console.log('Данные избранного с сервера:', data);
-            
-            if (data.success) {
-                renderFavorites(data.favorites || []);
-            } else {
-                renderNoFavorites();
-            }
-            
+            const favorites = await favoriteController.getFavorites();
+            renderFavorites(favorites);
         } catch (error) {
             console.error('Ошибка загрузки избранного:', error);
             renderNoFavorites();
         }
     }
     
-    // Рендеринг списка избранных автомобилей (ЕДИНСТВЕННАЯ ФУНКЦИЯ)
+    // Рендеринг списка избранных автомобилей
     function renderFavorites(favorites) {
         console.log('renderFavorites вызвана с:', favorites);
         
@@ -314,13 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
             avatarInput.addEventListener('change', handleAvatarUpload);
         }
         
-        // Кнопка выхода (используем глобальную функцию)
+        // Кнопка выхода
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                if (window.logoutUser) {
-                    window.logoutUser();
-                }
-            });
+            logoutBtn.addEventListener('click', handleLogout);
         }
     }
     
@@ -335,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Проверяем размер файла (макс. 2MB)
+        // Проверяем размер файла
         if (file.size > 2 * 1024 * 1024) {
             showMessage('Размер изображения не должен превышать 2MB', 'error');
             return;
@@ -346,12 +263,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         reader.onload = async function(e) {
             try {
-                // Пробуем сохранить аватар на сервер
                 const success = await uploadAvatarToServer(file);
                 
                 if (success) {
-                    // Сохраняем аватар в localStorage как fallback
-                    localStorage.setItem(`avatar_${currentUser.id}`, e.target.result);
+                    // Сохраняем аватар в localStorage
+                    const user = userModel.getCurrentUser();
+                    if (user) {
+                        localStorage.setItem(`avatar_${user.id}`, e.target.result);
+                    }
                     
                     // Обновляем отображение аватара
                     avatarImage.src = e.target.result;
@@ -376,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Загрузка аватара на сервер
     async function uploadAvatarToServer(file) {
-        const token = localStorage.getItem('auth_token');
+        const token = userModel.getToken();
         if (!token) return false;
         
         const formData = new FormData();
@@ -398,6 +317,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Выход из системы
+    async function handleLogout() {
+        const result = await authController.logout();
+        
+        if (result.success) {
+            showMessage('Выход выполнен', 'success');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+    }
+    
     // Удаление из избранного
     window.removeFromFavorites = async function(carId, carName) {
         if (!confirm(`Удалить "${carName}" из избранного?`)) {
@@ -405,32 +336,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            const token = localStorage.getItem('auth_token');
+            const result = await favoriteController.removeFavorite(carId);
             
-            // Удаляем с сервера
-            if (token) {
-                const response = await fetch(`/api/user/favorites/${carId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showMessage(`"${carName}" удален из избранного`, 'success');
-                    // Обновляем список избранного
-                    setTimeout(() => {
-                        loadFavorites();
-                    }, 500);
-                } else {
-                    showMessage('Ошибка удаления из избранного', 'error');
-                }
+            if (result.success) {
+                showMessage(`"${carName}" удален из избранного`, 'success');
+                // Обновляем список избранного
+                setTimeout(() => {
+                    loadFavorites();
+                }, 500);
             } else {
-                showMessage('Ошибка: пользователь не авторизован', 'error');
+                showMessage('Ошибка удаления из избранного', 'error');
             }
-            
         } catch (error) {
             console.error('Ошибка удаления из избранного:', error);
             showMessage('Ошибка удаления из избранного', 'error');
@@ -439,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Показать сообщение
     function showMessage(text, type = 'success') {
-        // Проверяем, есть ли уже уведомление
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
             existingNotification.remove();
@@ -452,7 +367,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <button class="notification-close">&times;</button>
         `;
         
-        // Стили для уведомления
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -471,17 +385,14 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: slideIn 0.3s ease-out;
         `;
         
-        // Кнопка закрытия
         const closeBtn = notification.querySelector('.notification-close');
         closeBtn.addEventListener('click', () => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
         });
         
-        // Добавляем в DOM
         document.body.appendChild(notification);
         
-        // Автоматическое удаление через 5 секунд
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.style.animation = 'slideOut 0.3s ease-out';
@@ -489,7 +400,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 5000);
         
-        // Добавляем CSS анимации если их нет
         if (!document.getElementById('notification-styles')) {
             const style = document.createElement('style');
             style.id = 'notification-styles';

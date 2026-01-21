@@ -1,4 +1,4 @@
-// CarView.js - ИСПРАВЛЕННАЯ ВЕРСИЯ С РАБОЧИМ ПОИСКОМ И УЛУЧШЕННЫМИ КАРТОЧКАМИ
+// CarView.js - UPDATED FOR MVC
 class CarView {
     constructor() {
         // Основные элементы DOM
@@ -19,11 +19,16 @@ class CarView {
         this.applyFilters = document.getElementById('applyFilters');
         this.resetFilters = document.getElementById('resetFilters');
         
+        // Initialize Controllers and Models
+        this.carController = new CarController();
+        this.carController.setView(this);
+        this.userModel = new UserModel();
+        this.favoriteController = new FavoriteController();
+        
         // Данные
         this.allCars = [];
         this.filteredCars = [];
         this.currentFilters = {};
-        this.currentUser = null;
         this.favoriteCars = new Set();
         this.searchTimeout = null;
         
@@ -34,11 +39,11 @@ class CarView {
     async init() {
         console.log('Инициализация CarView...');
         
-        // Загружаем данные
-        this.loadUserData();
+        // Загружаем данные через контроллер
         await this.loadCars();
         
-        if (this.currentUser) {
+        // Загружаем избранное если пользователь авторизован
+        if (this.userModel.getCurrentUser()) {
             await this.loadUserFavorites();
         }
         
@@ -55,83 +60,30 @@ class CarView {
     async loadCars() {
         try {
             this.showLoading(true);
+            this.allCars = await this.carController.loadCars();
+            console.log(`Загружено ${this.allCars.length} автомобилей`);
             
-            const response = await fetch('/api/cars');
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
-            const data = await response.json();
-            if (data.success) {
-                this.allCars = data.cars || [];
-                console.log(`Загружено ${this.allCars.length} автомобилей:`, this.allCars);
-                
-                // Инициализируем фильтры
-                this.initializeFilters();
-                // Показываем все автомобили
-                this.filteredCars = [...this.allCars];
-                this.displayResults();
-                this.updateCarsCount(this.filteredCars.length);
-            } else {
-                console.error('API вернул ошибку:', data.error);
-                await this.loadAllCars();
-            }
+            // Инициализируем фильтры
+            this.initializeFilters();
+            // Показываем все автомобили
+            this.filteredCars = [...this.allCars];
+            this.displayResults();
+            this.updateCarsCount(this.filteredCars.length);
         } catch (error) {
             console.error('Ошибка загрузки автомобилей:', error);
-            await this.loadAllCars();
+            this.showError('Не удалось загрузить автомобили');
         } finally {
             this.showLoading(false);
         }
     }
     
-    async loadAllCars() {
-        try {
-            const response = await fetch('/api/admin/cars');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.allCars = data.cars || [];
-                console.log(`Загружено ${this.allCars.length} автомобилей через альтернативный метод`);
-                this.initializeFilters();
-                this.filteredCars = [...this.allCars];
-                this.displayResults();
-                this.updateCarsCount(this.filteredCars.length);
-            } else {
-                this.showError('Не удалось загрузить автомобили');
-            }
-        } catch (error) {
-            console.error('Ошибка альтернативной загрузки:', error);
-            this.showError('Не удалось загрузить автомобили');
-        }
-    }
-    
-    loadUserData() {
-        try {
-            const userData = localStorage.getItem('user_data');
-            if (userData) {
-                this.currentUser = JSON.parse(userData);
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки данных пользователя:', error);
-        }
-    }
-    
     async loadUserFavorites() {
         try {
-            const token = localStorage.getItem('auth_token');
-            if (!token || !this.currentUser) return;
-            
-            const response = await fetch('/api/user/favorites', {
-                headers: { 'Authorization': `Bearer ${token}` }
+            const favorites = await this.favoriteController.getFavorites();
+            favorites.forEach(car => {
+                this.favoriteCars.add(car.id);
             });
-            
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.favorites) {
-                    data.favorites.forEach(car => {
-                        this.favoriteCars.add(car.id);
-                    });
-                    console.log('Избранное загружено:', this.favoriteCars);
-                }
-            }
+            console.log('Избранное загружено:', this.favoriteCars);
         } catch (error) {
             console.error('Ошибка загрузки избранного:', error);
         }
@@ -254,15 +206,15 @@ class CarView {
     searchCars(searchTerm = '') {
         clearTimeout(this.searchTimeout);
         
-        this.searchTimeout = setTimeout(() => {
+        this.searchTimeout = setTimeout(async () => {
             try {
                 this.showLoading(true);
                 
                 // Собираем все фильтры
                 const filters = this.collectFilters();
                 
-                // Фильтруем на клиенте
-                this.filterCars(filters);
+                // Фильтруем через контроллер
+                this.filteredCars = await this.carController.filterCars(filters);
                 
                 this.updateActiveFilters(filters);
                 this.displayResults();
@@ -279,7 +231,7 @@ class CarView {
     collectFilters() {
         const filters = {};
         
-        // Текстовый поиск - ИСПРАВЛЕНО: теперь работает правильно
+        // Текстовый поиск
         if (this.searchInput && this.searchInput.value.trim()) {
             filters.search = this.searchInput.value.trim();
         }
@@ -317,69 +269,6 @@ class CarView {
         return filters;
     }
     
-    filterCars(filters) {
-        console.log('Применяем фильтры:', filters);
-        
-        this.filteredCars = this.allCars.filter(car => {
-            let match = true;
-            
-            // Поиск по тексту - ИСПРАВЛЕНО: правильный поиск по марке и модели
-            if (filters.search) {
-                const searchTerm = filters.search.toLowerCase();
-                const brand = (car.brand || car.Brand || '').toLowerCase();
-                const model = (car.model || car.Model || '').toLowerCase();
-                const fullName = `${brand} ${model}`.toLowerCase();
-                
-                match = match && (
-                    brand.includes(searchTerm) ||
-                    model.includes(searchTerm) ||
-                    fullName.includes(searchTerm)
-                );
-                
-                console.log(`Поиск "${searchTerm}": brand="${brand}", model="${model}", match=${match}`);
-            }
-            
-            // Фильтр по марке
-            if (filters.brand) {
-                const carBrand = car.brand || car.Brand;
-                match = match && (carBrand === filters.brand);
-            }
-            
-            // Фильтр по типу кузова
-            if (filters.body) {
-                const carBody = car.body || car.Body;
-                match = match && (carBody === filters.body);
-            }
-            
-            // Фильтр по году
-            if (filters.minYear) {
-                const carYear = car.year || car.Year;
-                match = match && (carYear >= parseInt(filters.minYear));
-            }
-            
-            // Фильтр по статусу
-            if (filters.status) {
-                const carStatus = car.status || car.Status;
-                match = match && (carStatus === filters.status);
-            }
-            
-            // Фильтр по цене
-            if (filters.minPrice) {
-                const carPrice = car.price || car.Price || 0;
-                match = match && (carPrice >= filters.minPrice);
-            }
-            
-            if (filters.maxPrice) {
-                const carPrice = car.price || car.Price || 0;
-                match = match && (carPrice <= filters.maxPrice);
-            }
-            
-            return match;
-        });
-        
-        console.log(`Найдено ${this.filteredCars.length} автомобилей после фильтрации`);
-    }
-    
     // ==================== ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ ====================
     
     displayResults() {
@@ -393,7 +282,7 @@ class CarView {
             return;
         }
         
-        // Создаем HTML для всех автомобилей (без пагинации)
+        // Создаем HTML для всех автомобилей
         let html = '';
         this.filteredCars.forEach(car => {
             html += this.createCarCard(car);
@@ -427,7 +316,6 @@ class CarView {
         const formattedMileage = mileage === 0 ? 'Новый' : `${mileage.toLocaleString('ru-RU')} км`;
         const bodyTypeDisplay = this.getBodyTypeDisplayName(body);
         
-        // Создаем HTML карточки с увеличенной высотой и уменьшенным заголовком
         return `
             <div class="car-card" data-id="${id}" style="min-height: 420px;">
                 <div class="car-image">
@@ -499,7 +387,6 @@ class CarView {
     }
     
     removeFilter(filterKey) {
-        // Удаляем фильтр из текущих
         delete this.currentFilters[filterKey];
         
         // Сбрасываем соответствующий элемент формы
@@ -553,7 +440,6 @@ class CarView {
     // ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
     
     initFilters() {
-        // Настраиваем фильтры цен
         if (this.priceTo) {
             this.priceTo.placeholder = '10000000';
         }
@@ -630,9 +516,7 @@ class CarView {
         console.log('Применение фильтров');
         const filters = this.collectFilters();
         this.currentFilters = filters;
-        this.filterCars(filters);
-        this.displayResults();
-        this.updateActiveFilters(filters);
+        this.searchCars();
     }
     
     handleFilterReset() {
@@ -642,67 +526,29 @@ class CarView {
     // ==================== УПРАВЛЕНИЕ ИЗБРАННЫМ ====================
     
     async toggleFavorite(carId, carName, button) {
-        // Проверяем авторизацию
-        if (!this.currentUser) {
+        const result = await this.carController.toggleFavorite(carId, carName);
+        
+        if (result.requiresLogin) {
             this.showLoginPrompt();
             return;
         }
         
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            this.showLoginPrompt();
-            return;
-        }
-        
-        const isCurrentlyFavorite = this.favoriteCars.has(carId);
-        
-        try {
-            if (isCurrentlyFavorite) {
-                // Удаляем из избранного
-                const response = await fetch(`/api/user/favorites/${carId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    this.favoriteCars.delete(carId);
-                    this.updateFavoriteButton(button, false);
-                    this.showNotification(`"${carName}" удален из избранного`, 'success');
-                } else {
-                    this.showNotification('Ошибка удаления из избранного', 'error');
-                }
+        if (result.success) {
+            // Обновляем состояние избранного
+            if (result.isFavorite) {
+                this.favoriteCars.add(carId);
             } else {
-                // Добавляем в избранное
-                const response = await fetch('/api/user/favorites', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ carId })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    this.favoriteCars.add(carId);
-                    this.updateFavoriteButton(button, true);
-                    this.showNotification(`"${carName}" добавлен в избранное`, 'success');
-                } else {
-                    this.showNotification('Ошибка добавления в избранное', 'error');
-                }
+                this.favoriteCars.delete(carId);
             }
             
-            // Обновляем отображение всех карточек с новым статусом избранного
-            this.displayResults();
+            // Обновляем кнопку
+            this.updateFavoriteButton(button, result.isFavorite);
+            this.showNotification(result.message, 'success');
             
-        } catch (error) {
-            console.error('Ошибка переключения избранного:', error);
-            this.showNotification('Ошибка сети. Попробуйте позже.', 'error');
+            // Обновляем отображение всех карточек
+            this.displayResults();
+        } else {
+            this.showNotification(result.error || 'Ошибка', 'error');
         }
     }
     
@@ -713,7 +559,6 @@ class CarView {
             svg.style.stroke = isFavorite ? '#ff4757' : '#666';
         }
         
-        // Добавляем/убираем класс active
         if (isFavorite) {
             button.classList.add('active');
             button.title = 'Удалить из избранного';
@@ -722,7 +567,6 @@ class CarView {
             button.title = 'Добавить в избранное';
         }
         
-        // Анимация
         button.style.transform = 'scale(1.2)';
         setTimeout(() => {
             button.style.transform = 'scale(1)';
@@ -743,7 +587,6 @@ class CarView {
         
         let displayValue = value;
         
-        // Форматируем цену
         if (key === 'minPrice' || key === 'maxPrice') {
             displayValue = new Intl.NumberFormat('ru-RU').format(value) + ' ₽';
         }
@@ -761,7 +604,6 @@ class CarView {
             'Новый': 'Новый',
             'С пробегом': 'С пробегом'
         };
-        
         return statusMap[status] || status;
     }
     
@@ -775,7 +617,6 @@ class CarView {
             'Новый': 'badge-featured',
             'С пробегом': 'status-used'
         };
-        
         return statusClassMap[status] || 'status-default';
     }
     
@@ -793,7 +634,6 @@ class CarView {
             'Хэтчбек': 'Хэтчбек',
             'Купе': 'Купе'
         };
-        
         return bodyTypeMap[bodyType] || bodyType;
     }
     
@@ -804,14 +644,12 @@ class CarView {
             return;
         }
         
-        // Если модального окна нет, показываем алерт
         if (confirm('Чтобы добавить в избранное, нужно войти в систему. Перейти к авторизации?')) {
             window.location.href = 'index.html#login';
         }
     }
     
     showNotification(message, type = 'success') {
-        // Создаем элемент уведомления
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
@@ -819,7 +657,6 @@ class CarView {
             <button class="notification-close">&times;</button>
         `;
         
-        // Стили для уведомления
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -838,16 +675,13 @@ class CarView {
             animation: slideIn 0.3s ease-out;
         `;
         
-        // Кнопка закрытия
         const closeBtn = notification.querySelector('.notification-close');
         closeBtn.addEventListener('click', () => {
             notification.remove();
         });
         
-        // Добавляем в DOM
         document.body.appendChild(notification);
         
-        // Автоматическое удаление через 5 секунд
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.style.animation = 'slideOut 0.3s ease-out';
@@ -910,8 +744,7 @@ class CarView {
     }
     
     updateFavoritesOnLogin() {
-        this.loadUserData();
-        if (this.currentUser) {
+        if (this.userModel.getCurrentUser()) {
             this.loadUserFavorites().then(() => {
                 this.displayResults();
             });
@@ -924,17 +757,3 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM загружен, инициализируем CarView...');
     window.carView = new CarView();
 });
-
-// Глобальная функция для обновления избранного после входа
-window.updateCarFavorites = function() {
-    if (window.carView) {
-        window.carView.updateFavoritesOnLogin();
-    }
-};
-
-// Глобальная функция для сброса фильтров
-window.resetCarFilters = function() {
-    if (window.carView) {
-        window.carView.resetAllFilters();
-    }
-};

@@ -12,7 +12,10 @@ const PORT = 5000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '.'))); 
-app.use('/view', express.static(path.join(__dirname, '../view')));
+//app.use('/views', express.static(path.join(__dirname, '../views')));
+app.use('/models', express.static(path.join(__dirname, '../models')));
+app.use('/controllers', express.static(path.join(__dirname, '../controllers')));
+app.use('/views', express.static(path.join(__dirname, '../views')));
 
 // Простое хранилище сессий (в памяти)
 const sessions = {};

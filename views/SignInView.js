@@ -1,10 +1,14 @@
-// view/SignInView.js - ИСПРАВЛЕННЫЙ
+// view/SignInView.js - UPDATED FOR MVC
 class SignInView {
     constructor() {
         console.log('SignInView initializing...');
         
-        this.token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-        this.user = null;
+        // Initialize Controllers and Models
+        this.authController = new AuthController();
+        this.authController.setView(this);
+        this.userModel = new UserModel();
+        
+        this.user = this.userModel.getCurrentUser();
         
         // Элементы модальных окон
         this.modals = {
@@ -37,10 +41,10 @@ class SignInView {
         // Настраиваем обработчики событий
         this.setupEventListeners();
         
-        // Проверяем состояние авторизации
-        await this.checkAuthState();
+        // Проверяем состояние авторизации через модель
+        this.checkAuthState();
         
-        // Проверяем валидность токена на сервере
+        // Проверяем валидность токена
         await this.validateToken();
     }
     
@@ -50,7 +54,7 @@ class SignInView {
             link.addEventListener('click', (e) => this.handleSignInClick(e, link));
         });
         
-        // Обработчики для модальных окон (если они есть в DOM)
+        // Обработчики для модальных окон
         this.setupModalListeners();
         
         // Глобальные обработчики Enter в формах
@@ -139,18 +143,15 @@ class SignInView {
     }
     
     handleSignInClick(e, link) {
-        // ВАЖНО: проверяем, авторизован ли пользователь
-        if (this.token && this.user) {
+        // Проверяем авторизацию через модель
+        if (this.user) {
             // Если пользователь авторизован и находится на странице профиля
             if (window.location.pathname.includes('profile.html')) {
-                // На странице профиля - ничего не делаем, разрешаем стандартное поведение
-                // (или можно добавить кнопку выхода отдельно на странице профиля)
                 return true;
             } else {
                 // На других страницах - разрешаем переход на профиль
-                // Не отменяем событие, позволяем переходу по ссылке
-                link.onclick = null; // Убираем обработчик
-                return true; // Разрешаем стандартное поведение браузера
+                link.onclick = null;
+                return true;
             }
         } else {
             // Если пользователь не авторизован - показываем модальное окно входа
@@ -162,44 +163,26 @@ class SignInView {
     async checkAuthState() {
         console.log('Checking auth state...');
         
-        const userData = localStorage.getItem('user_data');
+        this.user = this.userModel.getCurrentUser();
         
-        if (!this.token || !userData) {
-            console.log('No token or user data found');
+        if (!this.user) {
+            console.log('No user found');
             this.updateNavForGuest();
             return;
         }
         
-        try {
-            this.user = JSON.parse(userData);
-            console.log('User from localStorage:', this.user);
-            
-            // Обновляем интерфейс для авторизованного пользователя
-            this.updateNavForUser(this.user);
-            
-        } catch (error) {
-            console.error('Error parsing user data:', error);
-            this.updateNavForGuest();
-        }
+        console.log('User from model:', this.user);
+        
+        // Обновляем интерфейс для авторизованного пользователя
+        this.updateNavForUser(this.user);
     }
     
     async validateToken() {
-        if (!this.token || !this.user) return;
+        if (!this.user) return;
         
-        try {
-            const response = await fetch('/api/user', {
-                headers: { 
-                    'Authorization': `Bearer ${this.token}` 
-                }
-            });
-            
-            if (!response.ok) {
-                // Токен невалидный
-                this.updateNavForGuest();
-            }
-        } catch (error) {
-            console.warn('Ошибка проверки токена:', error);
-            // Оставляем пользователя авторизованным при ошибке сети
+        const validation = await this.userModel.validateToken();
+        if (!validation.isValid) {
+            this.updateNavForGuest();
         }
     }
     
@@ -343,18 +326,14 @@ class SignInView {
         const errorElement = document.getElementById('loginPasswordError');
         
         try {
-            const result = await this.loginUser(email, password);
+            const result = await this.authController.login(email, password);
             
             if (result.success) {
                 this.closeModal('login');
                 this.showSuccessMessage('Вы успешно вошли в систему!');
                 
-                // Сохраняем данные пользователя
-                this.token = result.token;
+                // Обновляем данные пользователя
                 this.user = result.user;
-                localStorage.setItem('auth_token', result.token);
-                localStorage.setItem('token', result.token);
-                localStorage.setItem('user_data', JSON.stringify(result.user));
                 
                 // Обновляем интерфейс
                 this.updateNavForUser(result.user);
@@ -390,21 +369,18 @@ class SignInView {
         const errorElement = document.getElementById('regEmailError');
         
         try {
-            const result = await this.registerUser(name, phone, email, password);
+            const userData = { name, phone, email, password };
+            const result = await this.authController.register(userData);
             
             if (result.success) {
                 this.closeModal('register');
                 this.showSuccessMessage('Регистрация прошла успешно! Теперь вы можете войти.');
                 
                 // Автоматически входим после регистрации
-                const loginResult = await this.loginUser(email, password);
+                const loginResult = await this.authController.login(email, password);
                 
                 if (loginResult.success) {
-                    this.token = loginResult.token;
                     this.user = loginResult.user;
-                    localStorage.setItem('auth_token', loginResult.token);
-                    localStorage.setItem('token', loginResult.token);
-                    localStorage.setItem('user_data', JSON.stringify(loginResult.user));
                     
                     this.updateNavForUser(loginResult.user);
                     
@@ -426,83 +402,12 @@ class SignInView {
         }
     }
     
-    // API функции
-    async loginUser(email, password) {
-        try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json' 
-                },
-                body: JSON.stringify({ email, password })
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                return { 
-                    success: false, 
-                    error: data.error || 'Ошибка входа' 
-                };
-            }
-            
-            return { 
-                success: true, 
-                token: data.token, 
-                user: data.user 
-            };
-            
-        } catch (error) {
-            console.error('Ошибка входа:', error);
-            return { 
-                success: false, 
-                error: 'Ошибка соединения с сервером' 
-            };
-        }
-    }
-    
-    async registerUser(name, phone, email, password) {
-        try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, phone, email, password })
-            });
-            
-            const data = await response.json();
-            
-            if (!response.ok) {
-                return { 
-                    success: false, 
-                    error: data.error || 'Ошибка регистрации' 
-                };
-            }
-            
-            return { 
-                success: true, 
-                data: data 
-            };
-            
-        } catch (error) {
-            console.error('Ошибка регистрации:', error);
-            return { 
-                success: false, 
-                error: 'Ошибка соединения с сервером' 
-            };
-        }
-    }
-    
     updateNavForGuest() {
         console.log('Updating nav for guest');
         
-        // Очищаем данные
-        this.token = null;
+        // Очищаем данные через модель
+        this.userModel.clearUserData();
         this.user = null;
-        localStorage.removeItem('token');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
         
         // Обновляем ссылки входа
         this.signinLinks.forEach(link => {
@@ -539,16 +444,16 @@ class SignInView {
                 // Убираем старые обработчики
                 link.removeEventListener('click', this.handleSignInClick);
                 
-                // Добавляем обработчик, который не мешает переходу на профиль
+                // Добавляем обработчик
                 link.addEventListener('click', (e) => this.handleSignInClick(e, link));
                 
-                // Также добавляем отдельную кнопку для выхода (опционально)
+                // Добавляем отдельную кнопку для выхода
                 this.addLogoutButtonIfNeeded();
             }
         });
         
-        // Проверяем, является ли пользователь администратором
-        const isAdmin = this.isUserAdmin(user);
+        // Проверяем, является ли пользователь администратором через модель
+        const isAdmin = this.userModel.isAdmin();
         console.log('Is user admin?', isAdmin);
         
         // Показываем или скрываем админские вкладки и навигацию
@@ -567,7 +472,6 @@ class SignInView {
         
         const logoutBtn = document.getElementById('logoutBtn');
         if (!logoutBtn) {
-            // Создаем кнопку выхода на странице профиля
             const profileContainer = document.querySelector('.profile-container');
             if (profileContainer) {
                 const logoutButton = document.createElement('button');
@@ -579,28 +483,6 @@ class SignInView {
                 profileContainer.appendChild(logoutButton);
             }
         }
-    }
-    
-    isUserAdmin(user) {
-        if (!user) return false;
-        
-        console.log('Checking admin status for user:', user);
-        
-        // Проверяем разными способами
-        const roleName = (user.role || user.Role_Name || '').toLowerCase();
-        const roleId = user.role_id || user.Role_ID;
-        
-        console.log('Role name:', roleName);
-        console.log('Role ID:', roleId);
-        
-        // Различные варианты названия роли администратора
-        const isAdmin = roleName.includes('админ') || 
-                       roleName.includes('admin') ||
-                       roleName === 'администратор' ||
-                       roleName === 'administrator' ||
-                       roleId === 1;
-        
-        return isAdmin;
     }
     
     showAdminTabs() {
@@ -668,43 +550,25 @@ class SignInView {
     }
     
     async logout() {
-        const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
+        const result = await this.authController.logout();
         
-        if (token) {
-            try {
-                await fetch('/api/logout', {
-                    method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${token}` 
-                    }
-                });
-            } catch (error) {
-                console.error('Ошибка при выходе:', error);
-            }
+        if (result.success) {
+            // Обновляем навигацию
+            this.updateNavForGuest();
+            
+            // Показываем уведомление
+            this.showSuccessMessage('Выход выполнен');
+            
+            // Перенаправляем на главную страницу
+            setTimeout(() => {
+                if (!window.location.pathname.includes('index.html') && 
+                    !window.location.pathname.endsWith('/')) {
+                    window.location.href = 'index.html';
+                } else {
+                    window.location.reload();
+                }
+            }, 1000);
         }
-        
-        // Очищаем данные
-        this.token = null;
-        this.user = null;
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user_data');
-        
-        // Обновляем навигацию
-        this.updateNavForGuest();
-        
-        // Показываем уведомление
-        this.showSuccessMessage('Выход выполнен');
-        
-        // Перенаправляем на главную страницу
-        setTimeout(() => {
-            if (!window.location.pathname.includes('index.html') && 
-                !window.location.pathname.endsWith('/')) {
-                window.location.href = 'index.html';
-            } else {
-                window.location.reload();
-            }
-        }, 1000);
     }
     
     showSuccessMessage(message) {
@@ -720,7 +584,8 @@ class SignInView {
     
     // Глобальные функции для работы с избранным
     static addToFavorites(carId) {
-        if (!localStorage.getItem('auth_token')) {
+        const userModel = new UserModel();
+        if (!userModel.getCurrentUser()) {
             alert('Для добавления в избранное необходимо войти в систему');
             if (window.signInView) {
                 window.signInView.openModal('login');
@@ -728,10 +593,7 @@ class SignInView {
             return false;
         }
         
-        const userData = localStorage.getItem('user_data');
-        if (!userData) return false;
-        
-        const user = JSON.parse(userData);
+        const user = userModel.getCurrentUser();
         
         // Получаем текущие избранные автомобили из localStorage
         let favorites = JSON.parse(localStorage.getItem(`favorites_${user.id}`)) || [];
@@ -746,7 +608,7 @@ class SignInView {
         favorites.push(carId);
         localStorage.setItem(`favorites_${user.id}`, JSON.stringify(favorites));
         
-        // Пробуем сохранить на сервере
+        // Пробуем сохранить на сервере через контроллер
         SignInView.saveFavoriteToServer(carId);
         
         alert('Автомобиль добавлен в избранное!');
@@ -754,24 +616,8 @@ class SignInView {
     }
     
     static async saveFavoriteToServer(carId) {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return false;
-        
-        try {
-            const response = await fetch('/api/user/favorites', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ carId })
-            });
-            
-            return response.ok;
-        } catch (error) {
-            console.error('Ошибка сохранения избранного на сервер:', error);
-            return false;
-        }
+        const favoriteController = new FavoriteController();
+        return await favoriteController.addFavorite(carId);
     }
 }
 
@@ -784,20 +630,3 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addToFavorites = SignInView.addToFavorites;
     window.logoutUser = () => window.signInView?.logout();
 });
-
-// Глобальные функции для отладки
-window.debugAuth = function() {
-    console.log('=== Auth Debug ===');
-    console.log('Token:', localStorage.getItem('token'));
-    console.log('Auth Token:', localStorage.getItem('auth_token'));
-    console.log('User Data:', localStorage.getItem('user_data'));
-    console.log('SignInView instance:', window.signInView);
-    console.log('Signin links:', document.querySelectorAll('#signinLink, .nav-menu a[href="signin.html"]').length);
-    
-    // Проверяем все элементы навигации
-    const navItems = ['carsTabItem', 'usersTabItem', 'newsTabItem'];
-    navItems.forEach(id => {
-        const el = document.getElementById(id);
-        console.log(`${id}:`, el ? 'found' : 'not found', 'display:', el?.style.display);
-    });
-};

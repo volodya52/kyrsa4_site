@@ -1,3 +1,4 @@
+// views/NewsView.js - UPDATED FOR MVC
 class NewsView {
     constructor() {
         this.newsGrid = document.getElementById('newsGrid');
@@ -8,6 +9,10 @@ class NewsView {
         this.modalNewsTitle = document.getElementById('modalNewsTitle');
         this.modalNewsBody = document.getElementById('modalNewsBody');
         this.closeNewsModal = document.getElementById('closeNewsModal');
+        
+        // Initialize Controller
+        this.newsController = new NewsController();
+        this.newsController.setView(this);
         
         this.currentFilter = 'all';
         this.news = [];
@@ -48,15 +53,8 @@ class NewsView {
         this.showLoading();
         
         try {
-            const response = await fetch('/api/news');
-            const data = await response.json();
-            
-            if (data.success) {
-                this.news = data.news;
-                this.renderNews();
-            } else {
-                this.showError('Не удалось загрузить новости');
-            }
+            this.news = await this.newsController.loadNews();
+            this.renderNews();
         } catch (error) {
             console.error('Ошибка загрузки новостей:', error);
             this.showError('Ошибка при загрузке новостей');
@@ -83,11 +81,7 @@ class NewsView {
     }
     
     filterNews() {
-        if (this.currentFilter === 'all') {
-            return this.news;
-        }
-        
-        return this.news.filter(item => item.type === this.currentFilter);
+        return this.newsController.filterNewsByType(this.news, this.currentFilter);
     }
     
     createNewsCard(news) {

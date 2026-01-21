@@ -16,29 +16,28 @@
                 </div>
                 
                 <ul class="nav-menu" id="navMenu">
-    <li><a href="index.html">Главная</a></li>
-    <li><a href="cars.html">Автомобили</a></li>
-    <li><a href="uslugi.html">Услуги</a></li>
-    <li><a href="about.html">О нас</a></li>
-    <li><a href="contact.html">Контакты</a></li>
-    <li><a href="news.html" class="active">Новости</a></li>
-    <li id="carsTabItem" style="display: none;">
-        <a href="carsCRUD.html">Управление авто</a>
-    </li>
-    <li id="usersTabItem" style="display: none;">
-        <a href="users.html">Пользователи</a>
-    </li>
-    <li id="newsTabItem" style="display: none;">
-        <a href="newsCRUD.html">Управление новостями</a> <!-- ИЗМЕНЕНО -->
-    </li>
-    <li><a href="#" id="signinLink">Войти</a></li>
-</ul>
+                    <li><a href="index.html">Главная</a></li>
+                    <li><a href="cars.html">Автомобили</a></li>
+                    <li><a href="uslugi.html">Услуги</a></li>
+                    <li><a href="about.html">О нас</a></li>
+                    <li><a href="contact.html">Контакты</a></li>
+                    <li><a href="news.html" class="active">Новости</a></li>
+                    <li id="carsTabItem" style="display: none;">
+                        <a href="carsCRUD.html">Управление авто</a>
+                    </li>
+                    <li id="usersTabItem" style="display: none;">
+                        <a href="users.html">Пользователи</a>
+                    </li>
+                    <li id="newsTabItem" style="display: none;">
+                        <a href="newsCRUD.html">Управление новостями</a> 
+                    </li>
+                    <li><a href="#" id="signinLink">Войти</a></li>
+                </ul>
             </nav>
         </div>
     </header>
 
     <main class="news-page">
-        <!-- Hero Section -->
         <section class="hero-news">
             <div class="container">
                 <div class="hero-news-content">
@@ -47,8 +46,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- News Filters -->
         <section class="news-filters-section">
             <div class="container">
                 <div class="news-filters">
@@ -61,11 +58,9 @@
             </div>
         </section>
 
-        <!-- News Grid -->
         <section class="news-grid-section">
             <div class="container">
                 <div class="news-grid" id="newsGrid">
-                    <!-- News items will be loaded here -->
                 </div>
                 
                 <div class="loading" id="loading" style="display: none;">
@@ -80,7 +75,6 @@
             </div>
         </section>
 
-        <!-- News Detail Modal -->
         <div class="modal-overlay" id="newsDetailModal">
             <div class="modal-content modal-wide">
                 <div class="modal-header">
@@ -88,13 +82,17 @@
                     <button class="modal-close" id="closeNewsModal">&times;</button>
                 </div>
                 <div class="modal-body" id="modalNewsBody">
-                    <!-- News content will be loaded here -->
+                
                 </div>
             </div>
         </div>
     </main>
 
-    <script src="../view/SignInView.js"></script>
-    <script src="../view/NewsView.js"></script>
+    <script src="../models/UserModel.js"></script>
+    <script src="../models/NewsModel.js"></script>
+    <script src="../controllers/NewsController.js"></script>
+    <script src="../controllers/AuthController.js"></script>
+    <script src="../views/NewsView.js"></script>
+    <script src="../views/SignInView.js"></script>
 </body>
 </html>

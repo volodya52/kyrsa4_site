@@ -1,4 +1,4 @@
-// CarDetailsView.js - Исправленная версия с корректной обработкой авторизации
+// CarDetailsView.js - UPDATED FOR MVC
 document.addEventListener('DOMContentLoaded', function() {
     // Проверяем, находимся ли мы на странице деталей автомобиля
     const carImage = document.getElementById('carImage');
@@ -36,9 +36,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginModal = document.getElementById('loginModal');
     const registerModal = document.getElementById('registerModal');
     
+    // Initialize Controllers and Models
+    const carController = new CarController();
+    const userModel = new UserModel();
+    const favoriteController = new FavoriteController();
+    const authController = new AuthController();
+    
     // Данные
     let currentCar = null;
-    let currentUser = null;
     let isFavorite = false;
     
     // Инициализация
@@ -61,15 +66,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Показываем индикатор загрузки
         showLoading();
         
-        // Загружаем данные автомобиля
+        // Загружаем данные автомобиля через контроллер
         await loadCarDetails(carId);
         
-        // Загружаем данные пользователя
-        loadUserData();
-        
-        // Если пользователь авторизован, проверяем избранное
-        if (currentUser && currentCar) {
-            await checkIfFavorite();
+        // Проверяем авторизацию через модель
+        const user = userModel.getCurrentUser();
+        if (user) {
+            updateSignInLink(user);
+            // Если пользователь авторизован, проверяем избранное
+            await checkIfFavorite(carId);
         }
         
         // Настраиваем обработчики событий
@@ -163,9 +168,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (signinLink) {
             signinLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (currentUser) {
+                const user = userModel.getCurrentUser();
+                if (user) {
                     // Если пользователь уже авторизован, показываем меню профиля
-                    handleLoggedInUser();
+                    handleLoggedInUser(user);
                 } else {
                     // Если не авторизован, показываем окно входа
                     showAuthModal();
@@ -192,39 +198,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email, password })
-            });
+            const result = await authController.login(email, password);
             
-            const data = await response.json();
-            
-            if (data.success) {
-                // Сохраняем токен и данные пользователя
-                localStorage.setItem('auth_token', data.token);
-                localStorage.setItem('user_data', JSON.stringify(data.user));
-                
-                currentUser = data.user;
+            if (result.success) {
                 showNotification('Вход выполнен успешно!', 'success');
                 
                 // Закрываем модальное окно
                 if (loginModal) loginModal.style.display = 'none';
                 
                 // Обновляем кнопку входа
-                updateSignInLink();
+                updateSignInLink(result.user);
                 
                 // Проверяем избранное
                 if (currentCar) {
-                    await checkIfFavorite();
+                    await checkIfFavorite(currentCar.id || currentCar.ID);
                 }
                 
                 // Выполняем отложенное действие, если оно было
                 executePendingAction();
             } else {
-                showNotification('Ошибка входа: ' + (data.error || 'Неверные данные'), 'error');
+                showNotification('Ошибка входа: ' + result.error, 'error');
             }
         } catch (error) {
             console.error('Ошибка входа:', error);
@@ -257,39 +250,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            const response = await fetch('/api/register', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ name, email, password, phone })
-            });
+            const userData = { name, email, password, phone };
+            const result = await authController.register(userData);
             
-            const data = await response.json();
-            
-            if (data.success) {
-                // Сохраняем токен и данные пользователя
-                localStorage.setItem('auth_token', data.token);
-                localStorage.setItem('user_data', JSON.stringify(data.user));
+            if (result.success) {
+                // Автоматически входим после регистрации
+                const loginResult = await authController.login(email, password);
                 
-                currentUser = data.user;
-                showNotification('Регистрация успешна!', 'success');
-                
-                // Закрываем модальное окно
-                if (registerModal) registerModal.style.display = 'none';
-                
-                // Обновляем кнопку входа
-                updateSignInLink();
-                
-                // Проверяем избранное
-                if (currentCar) {
-                    await checkIfFavorite();
+                if (loginResult.success) {
+                    showNotification('Регистрация успешна!', 'success');
+                    
+                    // Закрываем модальное окно
+                    if (registerModal) registerModal.style.display = 'none';
+                    
+                    // Обновляем кнопку входа
+                    updateSignInLink(loginResult.user);
+                    
+                    // Проверяем избранное
+                    if (currentCar) {
+                        await checkIfFavorite(currentCar.id || currentCar.ID);
+                    }
+                    
+                    // Выполняем отложенное действие, если оно было
+                    executePendingAction();
                 }
-                
-                // Выполняем отложенное действие, если оно было
-                executePendingAction();
             } else {
-                showNotification('Ошибка регистрации: ' + (data.error || 'Проверьте введенные данные'), 'error');
+                showNotification('Ошибка регистрации: ' + result.error, 'error');
             }
         } catch (error) {
             console.error('Ошибка регистрации:', error);
@@ -314,12 +300,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Обновить кнопку входа в шапке
-    function updateSignInLink() {
+    function updateSignInLink(user) {
         const signinLink = document.getElementById('signinLink');
         if (!signinLink) return;
         
-        if (currentUser) {
-            signinLink.textContent = currentUser.name;
+        if (user) {
+            signinLink.textContent = user.name;
             signinLink.href = '#';
             signinLink.title = 'Профиль';
         } else {
@@ -330,38 +316,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Обработка для авторизованного пользователя
-    function handleLoggedInUser() {
-        if (confirm(`Вы вошли как ${currentUser.name}. Хотите выйти?`)) {
+    function handleLoggedInUser(user) {
+        if (confirm(`Вы вошли как ${user.name}. Хотите выйти?`)) {
             handleLogout();
         }
     }
     
     // Выход из системы
     async function handleLogout() {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-            try {
-                await fetch('/api/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-            } catch (error) {
-                console.error('Ошибка выхода:', error);
-            }
+        const result = await authController.logout();
+        
+        if (result.success) {
+            showNotification('Вы вышли из системы', 'info');
+            updateSignInLink(null);
+            updateFavoriteButton();
         }
-        
-        // Очищаем локальное хранилище
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('user_data');
-        
-        currentUser = null;
-        isFavorite = false;
-        
-        showNotification('Вы вышли из системы', 'info');
-        updateSignInLink();
-        updateFavoriteButton();
     }
     
     // Показать индикатор загрузки
@@ -376,42 +345,14 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             console.log('Загрузка деталей автомобиля ID:', carId);
             
-            // Пробуем несколько вариантов endpoints
-            let apiUrl = `/api/cars/${carId}`;
-            console.log('Пробуем endpoint:', apiUrl);
+            // Используем контроллер для загрузки данных
+            currentCar = await carController.getCarDetails(carId);
             
-            let response = await fetch(apiUrl);
-            
-            // Если не работает, пробуем альтернативный endpoint
-            if (!response.ok) {
-                console.log('Первый endpoint не сработал, пробуем /api/admin/cars');
-                response = await fetch('/api/admin/cars');
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success && data.cars) {
-                        // Ищем автомобиль по ID в списке всех автомобилей
-                        const car = data.cars.find(c => c.id == carId || c.ID == carId);
-                        if (car) {
-                            currentCar = car;
-                            displayCarDetails(car);
-                            return;
-                        }
-                    }
-                }
-                
+            if (!currentCar) {
                 throw new Error(`Не удалось найти автомобиль с ID ${carId}`);
             }
             
-            const data = await response.json();
-            console.log('Данные с сервера:', data);
-            
-            if (data.success) {
-                currentCar = data.car;
-                displayCarDetails(data.car);
-            } else {
-                throw new Error(data.error || 'Не удалось загрузить данные автомобиля');
-            }
+            displayCarDetails(currentCar);
         } catch (error) {
             console.error('Ошибка загрузки деталей автомобиля:', error);
             showError('Не удалось загрузить данные автомобиля: ' + error.message);
@@ -420,84 +361,84 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Отображение данных автомобиля
     function displayCarDetails(car) {
-    console.log('Отображение данных автомобиля:', car);
-    
-    // Заголовок и цена
-    const brand = car.brand || car.Brand || 'Не указана';
-    const model = car.model || car.Model || 'Не указана';
-    const price = car.price || car.Price || 0;
-    const status = car.status || car.Status || 'В наличии';
-    
-    if (carTitle) carTitle.textContent = `${brand} ${model}`;
-    if (carPrice) carPrice.textContent = formatPrice(price);
-    
-    // Статус (бейдж)
-    if (carStatusBadge) {
-        carStatusBadge.textContent = status;
-        carStatusBadge.className = 'car-status-badge';
-        carStatusBadge.classList.add(getStatusClass(status));
+        console.log('Отображение данных автомобиля:', car);
+        
+        // Заголовок и цена
+        const brand = car.brand || car.Brand || 'Не указана';
+        const model = car.model || car.Model || 'Не указана';
+        const price = car.price || car.Price || 0;
+        const status = car.status || car.Status || 'В наличии';
+        
+        if (carTitle) carTitle.textContent = `${brand} ${model}`;
+        if (carPrice) carPrice.textContent = formatPrice(price);
+        
+        // Статус (бейдж)
+        if (carStatusBadge) {
+            carStatusBadge.textContent = status;
+            carStatusBadge.className = 'car-status-badge';
+            carStatusBadge.classList.add(getStatusClass(status));
+        }
+        
+        // Описание
+        if (carDescription) {
+            const description = car.description || car.Description || 'Описание отсутствует';
+            carDescription.textContent = description;
+            carDescription.style.whiteSpace = 'pre-wrap';
+        }
+        
+        // Изображение
+        const imageUrl = car.image_url || car.Image_url || 'https://via.placeholder.com/600x400?text=Автомобиль';
+        if (carImage) {
+            carImage.src = imageUrl;
+            carImage.alt = `${brand} ${model}`;
+            carImage.onerror = function() {
+                this.src = 'https://via.placeholder.com/600x400?text=Ошибка+загрузки';
+            };
+        }
+        
+        // Характеристики
+        if (carBrand) carBrand.textContent = brand || '-';
+        if (carModel) carModel.textContent = model || '-';
+        if (carYear) {
+            const year = car.year || car.Year || 'Не указан';
+            carYear.textContent = year;
+        }
+        
+        if (carMileage) {
+            const mileage = car.mileage || car.Mileage || 0;
+            carMileage.textContent = mileage === 0 ? 'Новый' : `${mileage.toLocaleString('ru-RU')} км`;
+        }
+        
+        if (carEngine) {
+            const engineSize = car.engineSize || car.EngineSize;
+            carEngine.textContent = engineSize ? `${engineSize} л` : 'Не указан';
+        }
+        
+        if (carHorsepower) {
+            const horsepower = car.horsepower || car.Horsepower;
+            carHorsepower.textContent = horsepower ? `${horsepower} л.с.` : 'Не указано';
+        }
+        
+        if (carTransmission) {
+            const transmission = car.transmission || car.Transmission || 'Не указана';
+            carTransmission.textContent = transmission;
+        }
+        
+        if (carFuel) {
+            const fuel = car.fuel || car.Fuel || 'Не указано';
+            carFuel.textContent = fuel;
+        }
+        
+        if (carBody) {
+            const body = car.body || car.Body || 'Не указан';
+            carBody.textContent = body;
+        }
+        
+        if (carColor) {
+            const color = car.color || car.Color || 'Не указан';
+            carColor.textContent = color;
+        }
     }
-    
-    // Описание
-    if (carDescription) {
-        const description = car.description || car.Description || 'Описание отсутствует';
-        carDescription.textContent = description;
-        carDescription.style.whiteSpace = 'pre-wrap';
-    }
-    
-    // Изображение (уменьшено на 10% за счет контейнера)
-    const imageUrl = car.image_url || car.Image_url || 'https://via.placeholder.com/600x400?text=Автомобиль';
-    if (carImage) {
-        carImage.src = imageUrl;
-        carImage.alt = `${brand} ${model}`;
-        carImage.onerror = function() {
-            this.src = 'https://via.placeholder.com/600x400?text=Ошибка+загрузки';
-        };
-    }
-    
-    // Характеристики (теперь в таблице)
-    if (carBrand) carBrand.textContent = brand || '-';
-    if (carModel) carModel.textContent = model || '-';
-    if (carYear) {
-        const year = car.year || car.Year || 'Не указан';
-        carYear.textContent = year;
-    }
-    
-    if (carMileage) {
-        const mileage = car.mileage || car.Mileage || 0;
-        carMileage.textContent = mileage === 0 ? 'Новый' : `${mileage.toLocaleString('ru-RU')} км`;
-    }
-    
-    if (carEngine) {
-        const engineSize = car.engineSize || car.EngineSize;
-        carEngine.textContent = engineSize ? `${engineSize} л` : 'Не указан';
-    }
-    
-    if (carHorsepower) {
-        const horsepower = car.horsepower || car.Horsepower;
-        carHorsepower.textContent = horsepower ? `${horsepower} л.с.` : 'Не указано';
-    }
-    
-    if (carTransmission) {
-        const transmission = car.transmission || car.Transmission || 'Не указана';
-        carTransmission.textContent = transmission;
-    }
-    
-    if (carFuel) {
-        const fuel = car.fuel || car.Fuel || 'Не указано';
-        carFuel.textContent = fuel;
-    }
-    
-    if (carBody) {
-        const body = car.body || car.Body || 'Не указан';
-        carBody.textContent = body;
-    }
-    
-    if (carColor) {
-        const color = car.color || car.Color || 'Не указан';
-        carColor.textContent = color;
-    }
-}
     
     // Получить CSS класс для статуса
     function getStatusClass(status) {
@@ -511,40 +452,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return statusMap[status] || 'status-default';
     }
     
-    // Загрузка данных пользователя
-    function loadUserData() {
-        try {
-            const userData = localStorage.getItem('user_data');
-            if (userData) {
-                currentUser = JSON.parse(userData);
-                console.log('Пользователь загружен:', currentUser);
-                updateSignInLink();
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки данных пользователя:', error);
-        }
-    }
-    
     // Проверка, в избранном ли автомобиль
-    async function checkIfFavorite() {
-        if (!currentUser || !currentCar) return;
-        
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
+    async function checkIfFavorite(carId) {
+        if (!carId) return;
         
         try {
-            const carId = currentCar.id || currentCar.ID;
-            const response = await fetch(`/api/user/favorites/check/${carId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                isFavorite = data.success && data.isFavorite;
-                updateFavoriteButton();
-            }
+            isFavorite = await favoriteController.checkFavorite(carId);
+            updateFavoriteButton();
         } catch (error) {
             console.error('Ошибка проверки избранного:', error);
         }
@@ -560,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Кнопка "Купить автомобиль"
         if (buyCarBtn) {
             buyCarBtn.addEventListener('click', () => {
-                if (!currentUser) {
+                if (!userModel.getCurrentUser()) {
                     // Сохраняем действие и показываем окно авторизации
                     setPendingAction(() => {
                         openBuyModal();
@@ -582,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Кнопка "В избранное"
         if (favoriteBtn) {
             favoriteBtn.addEventListener('click', () => {
-                if (!currentUser) {
+                if (!userModel.getCurrentUser()) {
                     // Сохраняем действие и показываем окно авторизации
                     setPendingAction(() => {
                         toggleFavorite();
@@ -601,17 +515,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Переключение избранного
     async function toggleFavorite() {
-        if (!currentUser) {
-            showLoginPrompt();
-            return;
-        }
-        
-        const token = localStorage.getItem('auth_token');
-        if (!token) {
-            showLoginPrompt();
-            return;
-        }
-        
         if (!currentCar) {
             showNotification('Данные автомобиля не загружены', 'error');
             return;
@@ -621,44 +524,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const carName = `${currentCar.brand || currentCar.Brand} ${currentCar.model || currentCar.Model}`;
         
         try {
-            if (isFavorite) {
-                // Удаляем из избранного
-                const response = await fetch(`/api/user/favorites/${carId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    isFavorite = false;
-                    updateFavoriteButton();
-                    showNotification(`"${carName}" удален из избранного`, 'success');
-                } else {
-                    showNotification('Ошибка удаления из избранного: ' + (data.error || ''), 'error');
-                }
+            const result = await carController.toggleFavorite(carId, carName);
+            
+            if (result.requiresLogin) {
+                showLoginPrompt();
+                return;
+            }
+            
+            if (result.success) {
+                isFavorite = result.isFavorite;
+                updateFavoriteButton();
+                showNotification(result.message, 'success');
             } else {
-                // Добавляем в избранное
-                const response = await fetch('/api/user/favorites', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ carId: carId })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    isFavorite = true;
-                    updateFavoriteButton();
-                    showNotification(`"${carName}" добавлен в избранное`, 'success');
-                } else {
-                    showNotification('Ошибка добавления в избранное: ' + (data.error || ''), 'error');
-                }
+                showNotification('Ошибка: ' + (result.error || ''), 'error');
             }
         } catch (error) {
             console.error('Ошибка переключения избранного:', error);
@@ -682,7 +560,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         favoriteBtn.title = isFavorite ? `Удалить "${carName}" из избранного` : `Добавить "${carName}" в избранное`;
         
-        // Обновляем стили кнопки
         if (isFavorite) {
             favoriteBtn.classList.add('active');
             favoriteBtn.classList.remove('btn-outline');
@@ -704,14 +581,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!buyModal || !currentCar) return;
         
         // Автозаполнение формы данными пользователя, если он авторизован
-        if (currentUser) {
+        const user = userModel.getCurrentUser();
+        if (user) {
             const buyName = document.getElementById('buyName');
             const buyPhone = document.getElementById('buyPhone');
             const buyEmail = document.getElementById('buyEmail');
             
-            if (buyName && currentUser.name) buyName.value = currentUser.name;
-            if (buyEmail && currentUser.email) buyEmail.value = currentUser.email;
-            if (buyPhone && currentUser.phone) buyPhone.value = currentUser.phone || '';
+            if (buyName && user.name) buyName.value = user.name;
+            if (buyEmail && user.email) buyEmail.value = user.email;
+            if (buyPhone && user.phone) buyPhone.value = user.phone || '';
         }
         
         buyModal.style.display = 'flex';
@@ -853,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         applyCreditBtn.addEventListener('click', () => {
-            if (!currentUser) {
+            if (!userModel.getCurrentUser()) {
                 // Сохраняем действие и показываем окно авторизации
                 setPendingAction(() => {
                     showNotification('Заявка на кредит будет отправлена при оформлении покупки', 'info');
@@ -899,12 +777,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!calcInitialPayment || !calcInitialPaymentRange) return;
         
         // Устанавливаем начальные значения
-        const initialAmount = Math.round(carPriceValue * 0.2); // 20% по умолчанию
+        const initialAmount = Math.round(carPriceValue * 0.2);
         calcInitialPayment.value = initialAmount;
         calcInitialPaymentRange.value = 20;
         updateInitialPaymentPercent();
         
-        // Синхронизация ползунка и поля ввода первоначального взноса
+        // Синхронизация ползунка и поля ввода
         calcInitialPayment.addEventListener('input', function() {
             const value = parseInt(this.value) || 0;
             const percent = Math.min(100, Math.round((value / carPriceValue) * 100));
@@ -967,28 +845,17 @@ document.addEventListener('DOMContentLoaded', function() {
             const termMonths = parseInt(calcCreditTerm.value) || 36;
             const annualRate = parseFloat(calcInterestRate.value) || 8.5;
             
-            // Проверка корректности данных
             if (initialAmount >= carPriceValue) {
                 showNotification('Первоначальный взнос не может быть больше стоимости автомобиля', 'error');
                 return;
             }
             
-            // Сумма кредита
             const loan = carPriceValue - initialAmount;
-            
-            // Ежемесячная процентная ставка
             const monthlyRate = annualRate / 100 / 12;
-            
-            // Расчет аннуитетного платежа
             const monthlyPaymentAmount = calculateAnnuityPayment(loan, termMonths, monthlyRate);
-            
-            // Общая сумма выплат
             const totalPayment = monthlyPaymentAmount * termMonths;
-            
-            // Переплата
             const overpaymentAmount = totalPayment - loan;
             
-            // Отображение результатов
             if (calcLoanAmount) calcLoanAmount.textContent = formatPrice(loan);
             if (calcMonthlyPayment) calcMonthlyPayment.textContent = formatPrice(monthlyPaymentAmount);
             if (calcOverpayment) calcOverpayment.textContent = formatPrice(overpaymentAmount);
@@ -1009,7 +876,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Показать уведомление
     function showNotification(message, type = 'success') {
-        // Проверяем, есть ли уже уведомление
         const existingNotification = document.querySelector('.notification');
         if (existingNotification) {
             existingNotification.remove();
@@ -1022,7 +888,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <button class="notification-close">&times;</button>
         `;
         
-        // Стили для уведомления
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -1041,17 +906,14 @@ document.addEventListener('DOMContentLoaded', function() {
             animation: slideIn 0.3s ease-out;
         `;
         
-        // Кнопка закрытия
         const closeBtn = notification.querySelector('.notification-close');
         closeBtn.addEventListener('click', () => {
             notification.style.animation = 'slideOut 0.3s ease-out';
             setTimeout(() => notification.remove(), 300);
         });
         
-        // Добавляем в DOM
         document.body.appendChild(notification);
         
-        // Автоматическое удаление через 5 секунд
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.style.animation = 'slideOut 0.3s ease-out';
@@ -1059,7 +921,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 5000);
         
-        // Добавляем CSS анимации если их нет
         if (!document.getElementById('notification-styles')) {
             const style = document.createElement('style');
             style.id = 'notification-styles';
@@ -1112,7 +973,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
         } else {
-            // Если контейнер не найден, показываем простой алерт
             alert(message + '\n\nПерейдите на страницу каталога автомобилей.');
             window.location.href = 'cars.html';
         }
