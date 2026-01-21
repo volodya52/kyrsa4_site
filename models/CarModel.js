@@ -5,7 +5,6 @@ class CarModel {
             const data = await response.json();
             return data.success ? data.cars : [];
         } catch (error) {
-            console.error('Error loading cars:', error);
             return [];
         }
     }
@@ -53,7 +52,6 @@ class CarModel {
             const data = await response.json();
             return data;
         } catch (error) {
-            console.error('Error saving car:', error);
             return { success: false, error: 'Network error' };
         }
     }
@@ -69,7 +67,6 @@ class CarModel {
             const data = await response.json();
             return data;
         } catch (error) {
-            console.error('Error deleting car:', error);
             return { success: false, error: 'Network error' };
         }
     }

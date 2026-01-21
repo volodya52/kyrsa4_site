@@ -57,24 +57,6 @@ class DatabaseCreate {
             )
         `;
 
-        const createTradeInTable = `
-            CREATE TABLE IF NOT EXISTS TradeIn (
-                ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                User_ID INTEGER NOT NULL,
-                Car_ID INTEGER,
-                Brand TEXT NOT NULL,
-                Model TEXT NOT NULL,
-                Year INTEGER NOT NULL,
-                Mileage INTEGER NOT NULL,
-                Estimated_price INTEGER,
-                Condition TEXT NOT NULL,
-                Phone TEXT NOT NULL,
-                Status TEXT DEFAULT 'В ожидании',
-                FOREIGN KEY (User_ID) REFERENCES Users (ID) ON DELETE CASCADE,
-                FOREIGN KEY (Car_ID) REFERENCES Cars(ID) ON DELETE SET NULL
-            )
-        `;
-
         const createNewsTable = `
             CREATE TABLE IF NOT EXISTS News (
                 ID INTEGER PRIMARY KEY AUTOINCREMENT,

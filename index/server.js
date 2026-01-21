@@ -12,7 +12,6 @@ const PORT = 5000;
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '.'))); 
-//app.use('/views', express.static(path.join(__dirname, '../views')));
 app.use('/models', express.static(path.join(__dirname, '../models')));
 app.use('/controllers', express.static(path.join(__dirname, '../controllers')));
 app.use('/views', express.static(path.join(__dirname, '../views')));
@@ -254,82 +253,6 @@ app.get('/api/cars/:id', async (req, res) => {
     }
 });
 
-// 3. TRADE-IN ЗАЯВКИ
-app.post('/api/trade-in', requireAuth, async (req, res) => {
-    try {
-        const { car_id, brand, model, year, mileage, estimated_price, condition, phone } = req.body;
-
-        if (!brand || !model || !year || !mileage || !condition || !phone) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Заполните обязательные поля' 
-            });
-        }
-
-        const tradeInData = {
-            userId: req.user.ID,
-            carId: car_id || null,
-            brand,
-            model,
-            year: parseInt(year),
-            mileage: parseInt(mileage),
-            estimated_price: estimated_price ? parseInt(estimated_price) : null,
-            condition,
-            phone
-        };
-
-        const result = await db.createTradeIn(tradeInData);
-
-        if (result.success) {
-            res.status(201).json({
-                success: true,
-                message: 'Заявка на Trade-In создана',
-                id: result.id
-            });
-        } else {
-            res.status(400).json({ 
-                success: false, 
-                error: result.error 
-            });
-        }
-
-    } catch (error) {
-        console.error('Ошибка создания заявки Trade-In:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-app.get('/api/trade-in/my', requireAuth, async (req, res) => {
-    try {
-        const tradeIns = await db.getUserTradeIns(req.user.ID);
-        
-        res.json({
-            success: true,
-            tradeIns: tradeIns.map(t => ({
-                id: t.ID,
-                brand: t.Brand,
-                model: t.Model,
-                year: t.Year,
-                mileage: t.Mileage,
-                estimated_price: t.Estimated_price,
-                condition: t.Condition,
-                phone: t.Phone,
-                status: t.Status,
-                car_brand: t.Car_Brand,
-                car_model: t.Car_Model
-            }))
-        });
-    } catch (error) {
-        console.error('Ошибка получения заявок:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
 
 // 4. НОВОСТИ И АКЦИИ
 app.get('/api/news', async (req, res) => {
@@ -420,65 +343,6 @@ app.post('/api/logout', requireAuth, (req, res) => {
     res.json({ success: true, message: 'Выход выполнен' });
 });
 
-// 6. АДМИНИСТРАТИВНЫЕ ФУНКЦИИ (только для администраторов)
-app.get('/api/admin/trade-ins', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const tradeIns = await db.getAllTradeIns();
-        
-        res.json({
-            success: true,
-            tradeIns: tradeIns.map(t => ({
-                id: t.ID,
-                user_name: t.User_Name,
-                user_email: t.User_Email,
-                brand: t.Brand,
-                model: t.Model,
-                year: t.Year,
-                mileage: t.Mileage,
-                estimated_price: t.Estimated_price,
-                condition: t.Condition,
-                phone: t.Phone,
-                status: t.Status,
-                created_at: t.Created_At,
-                car_brand: t.Car_Brand,
-                car_model: t.Car_Model
-            }))
-        });
-    } catch (error) {
-        console.error('Ошибка получения всех заявок:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-app.put('/api/admin/trade-ins/:id/status', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const { status } = req.body;
-        const id = parseInt(req.params.id);
-        
-        if (!['В ожидании', 'Одобрено', 'Отклонено', 'Завершено'].includes(status)) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Некорректный статус' 
-            });
-        }
-        
-        const result = await db.updateTradeInStatus(id, status);
-        
-        res.json({
-            success: true,
-            message: `Статус заявки обновлен на "${status}"`
-        });
-    } catch (error) {
-        console.error('Ошибка обновления статуса:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
 
 app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
     try {
@@ -1101,26 +965,7 @@ app.get('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
-// API для загрузки аватара (заглушка)
-app.post('/api/user/avatar', requireAuth, async (req, res) => {
-    try {
-        // В реальном проекте здесь нужно обрабатывать загрузку файла
-        // и сохранять его на сервере
-        
-        res.json({
-            success: true,
-            message: 'Аватар успешно обновлен',
-            avatar_url: '/uploads/avatars/' + Date.now() + '.jpg'
-        });
-        
-    } catch (error) {
-        console.error('Ошибка загрузки аватара:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
+
 
 // Получить все роли
 app.get('/api/admin/roles', requireAuth, requireAdmin, async (req, res) => {
@@ -1366,118 +1211,6 @@ app.get('/api/test-cars', async (req, res) => {
     }
 });
 
-app.post('/api/test-drive', async (req, res) => {
-    try {
-        const { name, phone, email, date, time, message, carId, carBrand, carModel } = req.body;
-
-        if (!name || !phone || !email || !date || !time || !carId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Заполните все обязательные поля' 
-            });
-        }
-
-        // Здесь можно сохранить заявку в БД
-        // Пока просто возвращаем успех
-        console.log('Новая заявка на тест-драйв:', req.body);
-        
-        res.json({
-            success: true,
-            message: 'Заявка на тест-драйв создана',
-            data: req.body
-        });
-
-    } catch (error) {
-        console.error('Ошибка создания заявки на тест-драйв:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-// 2. Buy API (упрощенный Trade-In)
-app.post('/api/buy', async (req, res) => {
-    try {
-        const { name, phone, email, paymentMethod, message, carId, carBrand, carModel } = req.body;
-
-        if (!name || !phone || !email || !paymentMethod || !carId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Заполните все обязательные поля' 
-            });
-        }
-
-        console.log('Новая заявка на покупку:', req.body);
-        
-        res.json({
-            success: true,
-            message: 'Заявка на покупку создана',
-            data: req.body
-        });
-
-    } catch (error) {
-        console.error('Ошибка создания заявки на покупку:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-// 3. Extended Trade-In API
-app.post('/api/trade-in/extended', async (req, res) => {
-    try {
-        const { 
-            name, phone, email, 
-            userCarBrand, userCarModel, userCarYear, 
-            userCarMileage, userCarCondition, message,
-            carId, carBrand, carModel 
-        } = req.body;
-
-        if (!name || !phone || !email || !userCarBrand || !userCarModel || 
-            !userCarYear || !userCarMileage || !userCarCondition || !carId) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Заполните все обязательные поля' 
-            });
-        }
-
-        // Сохраняем в TradeIn таблицу
-        const tradeInData = {
-            userId: req.user ? req.user.ID : null,
-            carId: parseInt(carId),
-            brand: userCarBrand,
-            model: userCarModel,
-            year: parseInt(userCarYear),
-            mileage: parseInt(userCarMileage),
-            condition: userCarCondition,
-            phone: phone
-        };
-
-        const result = await db.createTradeIn(tradeInData);
-
-        if (result.success) {
-            res.json({
-                success: true,
-                message: 'Заявка на Trade-In создана',
-                id: result.id
-            });
-        } else {
-            res.status(400).json({ 
-                success: false, 
-                error: result.error 
-            });
-        }
-
-    } catch (error) {
-        console.error('Ошибка создания заявки на Trade-In:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
 
 
 app.get('/', (req, res) => {

@@ -781,13 +781,13 @@ document.addEventListener('DOMContentLoaded', function() {
             // Удаляем старые опции
             calcInterestRate.innerHTML = '';
             
-            // Добавляем новые процентные ставки
+            
             const rates = [
-                { value: 16.9, label: 'ВТБ наличные - 16.9%' },
-                { value: 14.9, label: 'Специальная программа - 14.9%' },
-                { value: 18.99, label: 'Стандартный - 18.99%' },
-                { value: 25.5, label: 'Автокредит - 25.5%' },
-                { value: 22.9, label: 'Экспресс-кредит - 22.9%' }
+                { value: 16.9, label: 'ВТБ (наличные) - 16.9%' },
+                { value: 14.9, label: 'ОТП-банк - 14.9%' },
+                { value: 18.99, label: 'Альфа-банк - 18.99%' },
+                { value: 25.5, label: 'Сбербанк - 25.5%' },
+                { value: 22.9, label: 'Т-банк - 22.9%' }
             ];
             
             rates.forEach(rate => {
@@ -865,8 +865,6 @@ document.addEventListener('DOMContentLoaded', function() {
             calcInitialPaymentPercent.textContent = `${percent}% от стоимости`;
         }
         
-        // Функция расчета аннуитетного платежа по формуле:
-        // A = P * (r * (1 + r)^N) / ((1 + r)^N - 1)
         function calculateAnnuityPayment(P, N, r) {
             if (r === 0) {
                 return P / N;
