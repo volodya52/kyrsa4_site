@@ -73,7 +73,6 @@ class DatabaseCreate {
             createRolesTable,
             createUsersTable,
             createCarsTable,
-            createTradeInTable,
             createNewsTable,
             createFavoritesTable
         ];

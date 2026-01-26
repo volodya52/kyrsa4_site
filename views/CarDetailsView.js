@@ -883,6 +883,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification('Первоначальный взнос не может быть больше стоимости автомобиля', 'error');
                 return;
             }
+
+            if(initialAmount<0){
+                showNotification('Первоначальный взнос не может быть меньше 0', 'error');
+                return;
+            }
             
             const loan = carPriceValue - initialAmount;
             const monthlyRate = annualRate / 100 / 12;

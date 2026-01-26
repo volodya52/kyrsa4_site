@@ -22,36 +22,74 @@ class CarController {
     async filterCars(filters) {
         let cars = await this.carModel.getAllCars();
         
+        // Текстовый поиск
         if (filters.search) {
             const searchTerm = filters.search.toLowerCase();
             cars = cars.filter(car => {
-                const brand = (car.brand || '').toLowerCase();
-                const model = (car.model || '').toLowerCase();
+                const brand = (car.brand || car.Brand || '').toLowerCase();
+                const model = (car.model || car.Model || '').toLowerCase();
                 return brand.includes(searchTerm) || model.includes(searchTerm);
             });
         }
 
+        // Фильтр по марке
         if (filters.brand) {
-            cars = cars.filter(car => car.brand === filters.brand);
+            cars = cars.filter(car => {
+                const carBrand = car.brand || car.Brand;
+                return carBrand === filters.brand;
+            });
         }
 
+        // Фильтр по году выпуска (точное совпадение)
+        if (filters.year) {
+            cars = cars.filter(car => {
+                const carYear = car.year || car.Year;
+                return carYear == filters.year; // Используем нестрогое сравнение
+            });
+        }
+
+        // Фильтр по типу кузова
+        if (filters.body) {
+            cars = cars.filter(car => {
+                const carBody = car.body || car.Body;
+                return carBody === filters.body;
+            });
+        }
+
+        // Фильтр по статусу
+        if (filters.status) {
+            cars = cars.filter(car => {
+                const carStatus = car.status || car.Status;
+                return carStatus === filters.status;
+            });
+        }
+
+        // Фильтр по цене от
         if (filters.minPrice) {
-            cars = cars.filter(car => car.price >= filters.minPrice);
+            cars = cars.filter(car => {
+                const carPrice = car.price || car.Price || 0;
+                return carPrice >= filters.minPrice;
+            });
         }
 
+        // Фильтр по цене до
         if (filters.maxPrice) {
-            cars = cars.filter(car => car.price <= filters.maxPrice);
+            cars = cars.filter(car => {
+                const carPrice = car.price || car.Price || 0;
+                return carPrice <= filters.maxPrice;
+            });
         }
 
-        if(filters.minPrice<0){
-            return{
-                message:`"Минимальная цена не должна быть меньше 0"`
+        // Валидация цен (добавьте этот код ПОСЛЕ фильтрации)
+        if (filters.minPrice && filters.minPrice < 0) {
+            return {
+                message: "Минимальная цена не должна быть меньше 0"
             };
         }
 
-        if(filters.maxPrice<0){
-            return{
-                message:`"Максимальная цена не должна быть меньше 0"`
+        if (filters.maxPrice && filters.maxPrice < 0) {
+            return {
+                message: "Максимальная цена не должна быть меньше 0"
             };
         }
 

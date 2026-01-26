@@ -3256,3 +3256,353 @@ body {
     }
 }
 
+body.home-page {
+    background-image: url('https://www.bmw.ru/ru/index/_jcr_content/root/maincontent/contentblueprint_cop/backgroundmedia/image.coreimg.jpeg/1761812945927/image-for-index-page-2.jpeg');
+    background-size: cover;
+    background-position: center center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+body.home-page::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.4);
+    z-index: -1;
+    backdrop-filter: blur(2px);
+}
+
+/* ==================== */
+/* АДАПТАЦИЯ ДЛЯ СМАРТФОНОВ */
+/* ==================== */
+
+@media (max-width: 768px) {
+    /* Общие настройки */
+    body {
+        background-attachment: scroll;
+        background-size: cover;
+    }
+    
+    .container {
+        padding: 0 15px;
+    }
+    
+    /* Навигация */
+    .nav {
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 0;
+    }
+    
+    .logo {
+        margin-bottom: 15px;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .nav-menu {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        text-align: center;
+        padding: 10px 0;
+    }
+    
+    .nav-menu a {
+        display: block;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        margin: 2px 0;
+    }
+    
+    /* Хедер */
+    .header {
+        position: relative;
+        padding: 10px 0;
+    }
+    
+    /* Герой секция */
+    .hero {
+        height: auto;
+        min-height: 400px;
+        margin-top: 0;
+        padding: 60px 0 30px;
+    }
+    
+    .hero-content {
+        padding: 20px;
+    }
+    
+    .hero-title {
+        font-size: 24px;
+    }
+    
+    .hero-subtitle {
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    .hero-buttons {
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+    
+    .hero-buttons .btn {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    /* Кнопки */
+    .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    /* Сетка автомобилей */
+    .cars-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .car-card {
+        min-height: 350px;
+    }
+    
+    .car-image {
+        height: 180px;
+    }
+    
+    .car-title {
+        font-size: 16px;
+        min-height: 40px;
+    }
+    
+    .car-info {
+        padding: 15px;
+    }
+    
+    .car-specs {
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .spec-item {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    .car-price {
+        font-size: 18px;
+    }
+    
+    /* Фильтры и поиск */
+    .search-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    .search-btn {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    .filters-section {
+        padding: 15px;
+    }
+    
+    .filters-container {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-btn {
+        width: 100%;
+        padding: 12px;
+    }
+    
+    .active-filters {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+    }
+    
+    /* Детали автомобиля */
+    .car-details-container {
+        grid-template-columns: 1fr;
+        padding: 20px;
+        gap: 20px;
+    }
+    
+    .car-details-image-container {
+        height: 200px;
+    }
+    
+    .car-header-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .car-title {
+        font-size: 20px;
+    }
+    
+    .car-price {
+        font-size: 24px;
+    }
+    
+    .car-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .car-actions .btn {
+        width: 100%;
+    }
+    
+    /* Спецификации */
+    .specs-table td {
+        padding: 10px;
+        display: block;
+    }
+    
+    .specs-table tr {
+        display: block;
+        margin-bottom: 10px;
+    }
+    
+    .specs-table td:first-child {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+    }
+    
+    /* Модальные окна */
+    .modal-overlay {
+        padding: 10px;
+        align-items: flex-start;
+    }
+    
+    .modal-content {
+        width: 100%;
+        max-width: 100%;
+        margin: 20px auto;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    .modal-footer {
+        padding: 15px;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+    }
+    
+    /* Формы */
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .form-group {
+        width: 100%;
+    }
+    
+    /* Футер */
+    .footer {
+        padding: 40px 0 15px;
+    }
+    
+    .footer-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .footer-links {
+        align-items: center;
+    }
+    
+    .social-links {
+        justify-content: center;
+    }
+    
+    /* Профиль */
+    .profile-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .user-info-card {
+        padding: 15px;
+    }
+    
+    .favorites-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Админ таблицы */
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .users-table {
+        min-width: 600px;
+    }
+    
+    /* Новости */
+    .news-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Маленькие смартфоны */
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 22px;
+    }
+    
+    .car-card {
+        min-height: 320px;
+    }
+    
+    .car-image {
+        height: 150px;
+    }
+    
+    .car-title {
+        font-size: 15px;
+    }
+    
+    .section-title {
+        font-size: 24px;
+    }
+    
+    .nav-menu a {
+        font-size: 14px;
+        padding: 8px;
+    }
+}
+

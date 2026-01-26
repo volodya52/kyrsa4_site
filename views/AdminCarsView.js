@@ -296,11 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Пожалуйста, заполните обязательные поля (Марка, Модель, Год, Цена)');
             return;
         }
-        
-        if (carData.year < 2000 || carData.year > new Date().getFullYear() + 1) {
-            alert('Год выпуска должен быть в диапазоне от 2000 до ' + (new Date().getFullYear() + 1));
-            return;
-        }
+    
         
         if (carData.price < 0) {
             alert('Цена не может быть отрицательной');

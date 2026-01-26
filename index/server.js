@@ -1,14 +1,14 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const db = require('../database.js'); // Импортируем нашу базу данных
+const db = require('../database.js'); 
+const { error } = require('console');
 
 
 
 const app = express();
 const PORT = 5000;
 
-// Middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '.'))); 
@@ -131,7 +131,7 @@ app.post('/api/login', async (req, res) => {
         if (!user) {
             return res.status(401).json({ 
                 success: false, 
-                error: 'Неверный email или пароль' 
+                error: 'Пользователя не существует.' 
             });
         }
 
@@ -139,7 +139,14 @@ app.post('/api/login', async (req, res) => {
         if (user.Password !== password) {
             return res.status(401).json({ 
                 success: false, 
-                error: 'Неверный email или пароль' 
+                error: 'Неверный пароль' 
+            });
+        }
+
+        if (user.Email != email){
+            return res.status(401).json({
+                success:false,
+                error:'Неверный email'
             });
         }
 

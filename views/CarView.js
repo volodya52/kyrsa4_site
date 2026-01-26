@@ -229,45 +229,45 @@ class CarView {
     }
     
     collectFilters() {
-        const filters = {};
-        
-        // Текстовый поиск
-        if (this.searchInput && this.searchInput.value.trim()) {
-            filters.search = this.searchInput.value.trim();
-        }
-        
-        // Марка
-        if (this.brandFilter && this.brandFilter.value) {
-            filters.brand = this.brandFilter.value;
-        }
-        
-        // Тип кузова
-        if (this.typeFilter && this.typeFilter.value) {
-            filters.body = this.typeFilter.value;
-        }
-        
-        // Год выпуска
-        if (this.yearFilter && this.yearFilter.value) {
-            filters.minYear = this.yearFilter.value;
-        }
-        
-        // Статус
-        if (this.statusFilter && this.statusFilter.value) {
-            filters.status = this.statusFilter.value;
-        }
-        
-        // Цена от
-        if (this.priceFrom && this.priceFrom.value) {
-            filters.minPrice = parseInt(this.priceFrom.value) || 0;
-        }
-        
-        // Цена до
-        if (this.priceTo && this.priceTo.value) {
-            filters.maxPrice = parseInt(this.priceTo.value) || 100000000;
-        }
-        
-        return filters;
+    const filters = {};
+    
+    // Текстовый поиск
+    if (this.searchInput && this.searchInput.value.trim()) {
+        filters.search = this.searchInput.value.trim();
     }
+    
+    // Марка
+    if (this.brandFilter && this.brandFilter.value) {
+        filters.brand = this.brandFilter.value;
+    }
+    
+    // Тип кузова
+    if (this.typeFilter && this.typeFilter.value) {
+        filters.body = this.typeFilter.value;
+    }
+    
+    // Год выпуска
+    if (this.yearFilter && this.yearFilter.value) {
+        filters.year = this.yearFilter.value; // Изменено с minYear на year
+    }
+    
+    // Статус
+    if (this.statusFilter && this.statusFilter.value) {
+        filters.status = this.statusFilter.value;
+    }
+    
+    // Цена от
+    if (this.priceFrom && this.priceFrom.value) {
+        filters.minPrice = parseInt(this.priceFrom.value) || 0;
+    }
+    
+    // Цена до
+    if (this.priceTo && this.priceTo.value) {
+        filters.maxPrice = parseInt(this.priceTo.value) || 100000000;
+    }
+    
+    return filters;
+}
     
     // ==================== ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ ====================
     
@@ -579,7 +579,7 @@ class CarView {
         const filterNames = {
             'brand': 'Марка:',
             'body': 'Кузов:',
-            'minYear': 'Год от:',
+            'minYear': 'Год:',
             'status': 'Статус:',
             'minPrice': 'Цена от:',
             'maxPrice': 'Цена до:'
