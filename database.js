@@ -137,87 +137,87 @@ class DatabaseCreate {
     }
 
     addToFavorites(userId, carId) {
-    return new Promise((resolve, reject) => {
-        this.db.run(
-            'INSERT OR IGNORE INTO Favorites (User_ID, Car_ID) VALUES (?, ?)',
-            [userId, carId],
-            function(err) {
-                if (err) {
-                    reject({ success: false, error: err.message });
-                } else {
-                    resolve({ 
-                        success: true, 
-                        id: this.lastID,
-                        changes: this.changes 
-                    });
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                'INSERT OR IGNORE INTO Favorites (User_ID, Car_ID) VALUES (?, ?)',
+                [userId, carId],
+                function (err) {
+                    if (err) {
+                        reject({ success: false, error: err.message });
+                    } else {
+                        resolve({
+                            success: true,
+                            id: this.lastID,
+                            changes: this.changes
+                        });
+                    }
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
     removeFromFavorites(userId, carId) {
-    return new Promise((resolve, reject) => {
-        this.db.run(
-            'DELETE FROM Favorites WHERE User_ID = ? AND Car_ID = ?',
-            [userId, carId],
-            function(err) {
-                if (err) {
-                    reject({ success: false, error: err.message });
-                } else {
-                    resolve({ 
-                        success: true, 
-                        changes: this.changes 
-                    });
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                'DELETE FROM Favorites WHERE User_ID = ? AND Car_ID = ?',
+                [userId, carId],
+                function (err) {
+                    if (err) {
+                        reject({ success: false, error: err.message });
+                    } else {
+                        resolve({
+                            success: true,
+                            changes: this.changes
+                        });
+                    }
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
 
-isCarInFavorites(userId, carId) {
-    return new Promise((resolve, reject) => {
-        this.db.get(
-            'SELECT 1 FROM Favorites WHERE User_ID = ? AND Car_ID = ?',
-            [userId, carId],
-            (err, row) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(!!row);
+    isCarInFavorites(userId, carId) {
+        return new Promise((resolve, reject) => {
+            this.db.get(
+                'SELECT 1 FROM Favorites WHERE User_ID = ? AND Car_ID = ?',
+                [userId, carId],
+                (err, row) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(!!row);
+                    }
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
     getUserFavorites(userId) {
-    return new Promise((resolve, reject) => {
-        this.db.all(
-            `SELECT c.* 
+        return new Promise((resolve, reject) => {
+            this.db.all(
+                `SELECT c.* 
              FROM Cars c
              INNER JOIN Favorites f ON c.ID = f.Car_ID
              WHERE f.User_ID = ?
              ORDER BY c.ID DESC`,
-            [userId],
-            (err, rows) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(rows || []);
+                [userId],
+                (err, rows) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(rows || []);
+                    }
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
     addUser(name, email, password, phone = null, roleId = 2) {
         return new Promise((resolve, reject) => {
             this.db.run(
                 `INSERT INTO Users (Name, Email, Password, Phone, Role_ID) VALUES (?, ?, ?, ?, ?)`,
                 [name, email, password, phone, roleId],
-                function(err) {
+                function (err) {
                     if (err) {
                         if (err.code === 'SQLITE_CONSTRAINT') {
                             reject({ success: false, error: 'Пользователь с таким email уже существует' });
@@ -292,42 +292,42 @@ isCarInFavorites(userId, carId) {
         return new Promise((resolve, reject) => {
             const fields = [];
             const values = [];
-            
+
             if (userData.name) {
                 fields.push('Name = ?');
                 values.push(userData.name);
             }
-            
+
             if (userData.email) {
                 fields.push('Email = ?');
                 values.push(userData.email);
             }
-            
+
             if (userData.phone !== undefined) {
                 fields.push('Phone = ?');
                 values.push(userData.phone);
             }
-            
+
             if (userData.password) {
                 fields.push('Password = ?');
                 values.push(userData.password);
             }
-            
+
             if (userData.role_id) {
                 fields.push('Role_ID = ?');
                 values.push(userData.role_id);
             }
-            
+
             values.push(id);
-            
+
             if (fields.length === 0) {
                 resolve({ success: true, changes: 0 });
                 return;
             }
-            
+
             const query = `UPDATE Users SET ${fields.join(', ')} WHERE ID = ?`;
-            
-            this.db.run(query, values, function(err) {
+
+            this.db.run(query, values, function (err) {
                 if (err) {
                     reject({ success: false, error: err.message });
                 } else {
@@ -339,7 +339,7 @@ isCarInFavorites(userId, carId) {
 
     deleteUser(id) {
         return new Promise((resolve, reject) => {
-            this.db.run('DELETE FROM Users WHERE ID = ?', [id], function(err) {
+            this.db.run('DELETE FROM Users WHERE ID = ?', [id], function (err) {
                 if (err) {
                     reject({ success: false, error: err.message });
                 } else {
@@ -375,7 +375,7 @@ isCarInFavorites(userId, carId) {
                     carData.description || '', carData.status || 'В наличии',
                     carData.image_url || ''
                 ],
-                function(err) {
+                function (err) {
                     if (err) {
                         reject({ success: false, error: err.message });
                     } else {
@@ -423,12 +423,12 @@ isCarInFavorites(userId, carId) {
                 [
                     carData.brand, carData.model, carData.year, carData.price,
                     carData.mileage || 0, carData.engineSize || 0, carData.horsepower || 0,
-                    carData.transmission || 'Автомат', carData.fuel || 'Бензин', 
+                    carData.transmission || 'Автомат', carData.fuel || 'Бензин',
                     carData.body || 'Седан', carData.color || 'Черный',
                     carData.description || '', carData.status || 'В наличии',
                     carData.image_url || ''
                 ],
-                function(err) {
+                function (err) {
                     if (err) {
                         reject({ success: false, error: err.message });
                     } else {
@@ -480,7 +480,7 @@ isCarInFavorites(userId, carId) {
                         updateData.color, updateData.description, updateData.status,
                         updateData.image_url, carId
                     ],
-                    function(err) {
+                    function (err) {
                         if (err) {
                             reject({ success: false, error: err.message });
                         } else {
@@ -499,7 +499,7 @@ isCarInFavorites(userId, carId) {
             this.db.run(
                 'DELETE FROM Cars WHERE ID = ?',
                 [carId],
-                function(err) {
+                function (err) {
                     if (err) {
                         reject({ success: false, error: err.message });
                     } else {
@@ -551,7 +551,7 @@ isCarInFavorites(userId, carId) {
             }
 
 
-             query += ' ORDER BY ID DESC';
+            query += ' ORDER BY ID DESC';
 
             this.db.all(query, params, (err, rows) => {
                 if (err) {
@@ -563,70 +563,70 @@ isCarInFavorites(userId, carId) {
         });
     }
 
-    
+
 
     getNewsById(id) {
-    return new Promise((resolve, reject) => {
-        this.db.get(
-            `SELECT n.*, u.Name as Author_Name, c.Brand as Car_Brand, c.Model as Car_Model
+        return new Promise((resolve, reject) => {
+            this.db.get(
+                `SELECT n.*, u.Name as Author_Name, c.Brand as Car_Brand, c.Model as Car_Model
              FROM News n
              LEFT JOIN Users u ON n.User_ID = u.ID
              LEFT JOIN Cars c ON n.Car_ID = c.ID
              WHERE n.ID = ?`,
-            [id],
-            (err, row) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(row || null);
+                [id],
+                (err, row) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(row || null);
+                    }
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
-deleteNews(id) {
-    return new Promise((resolve, reject) => {
-        this.db.run(
-            'DELETE FROM News WHERE ID = ?',
-            [id],
-            function(err) {
-                if (err) {
-                    reject({ success: false, error: err.message });
-                } else {
-                    resolve({ success: true, changes: this.changes });
+    deleteNews(id) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                'DELETE FROM News WHERE ID = ?',
+                [id],
+                function (err) {
+                    if (err) {
+                        reject({ success: false, error: err.message });
+                    } else {
+                        resolve({ success: true, changes: this.changes });
+                    }
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
-updateNews(id, newsData) {
-    return new Promise((resolve, reject) => {
-        this.db.run(
-            `UPDATE News SET 
+    updateNews(id, newsData) {
+        return new Promise((resolve, reject) => {
+            this.db.run(
+                `UPDATE News SET 
                 Title = ?, Description = ?, Type = ?, 
                 User_ID = ?, Car_ID = ?, Image_url = ?
              WHERE ID = ?`,
-            [
-                newsData.title,
-                newsData.description,
-                newsData.type,
-                newsData.userId,
-                newsData.carId,
-                newsData.image_url,
-                id
-            ],
-            function(err) {
-                if (err) {
-                    reject({ success: false, error: err.message });
-                } else {
-                    resolve({ success: true, changes: this.changes });
+                [
+                    newsData.title,
+                    newsData.description,
+                    newsData.type,
+                    newsData.userId,
+                    newsData.carId,
+                    newsData.image_url,
+                    id
+                ],
+                function (err) {
+                    if (err) {
+                        reject({ success: false, error: err.message });
+                    } else {
+                        resolve({ success: true, changes: this.changes });
+                    }
                 }
-            }
-        );
-    });
-}
+            );
+        });
+    }
 
 
     addNews(newsData) {
@@ -639,7 +639,7 @@ updateNews(id, newsData) {
                     newsData.userId || null, newsData.carId || null,
                     newsData.image_url || ''
                 ],
-                function(err) {
+                function (err) {
                     if (err) {
                         reject({ success: false, error: err.message });
                     } else {
@@ -691,7 +691,7 @@ updateNews(id, newsData) {
 
     execute(sql, params = []) {
         return new Promise((resolve, reject) => {
-            this.db.run(sql, params, function(err) {
+            this.db.run(sql, params, function (err) {
                 if (err) {
                     reject(err);
                 } else {

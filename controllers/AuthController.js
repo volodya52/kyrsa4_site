@@ -17,7 +17,7 @@ class AuthController {
             });
 
             const data = await response.json();
-            
+
             if (data.success) {
                 this.userModel.saveUserData(data.user, data.token);
                 this.updateNavigation();
@@ -49,7 +49,7 @@ class AuthController {
 
     async logout() {
         const token = this.userModel.getToken();
-        
+
         if (token) {
             try {
                 await fetch('/api/logout', {
@@ -69,14 +69,14 @@ class AuthController {
     updateNavigation() {
         const user = this.userModel.getCurrentUser();
         const signinLinks = document.querySelectorAll('#signinLink, .nav-menu a[href="signin.html"]');
-        
+
         if (user) {
             // User is logged in
             signinLinks.forEach(link => {
                 link.textContent = user.name || 'Профиль';
                 link.href = 'profile.html';
             });
-            
+
             // Show/hide admin navigation
             if (this.userModel.isAdmin()) {
                 this.showAdminNavigation();
@@ -105,7 +105,7 @@ class AuthController {
         if (navMenu && !document.querySelector('.nav-menu a[href="users.html"]')) {
             const usersItem = document.createElement('li');
             usersItem.innerHTML = '<a href="users.html">Пользователи</a>';
-            
+
             const signinItem = document.querySelector('#signinLink')?.closest('li');
             if (signinItem && signinItem.parentNode) {
                 signinItem.parentNode.insertBefore(usersItem, signinItem);

@@ -1,10 +1,10 @@
-// AdminUserView.js - UPDATED FOR MVC
-document.addEventListener('DOMContentLoaded', function() {
+
+document.addEventListener('DOMContentLoaded', function () {
     // Элементы страницы
     const adminContent = document.getElementById('adminContent');
     const accessDenied = document.getElementById('accessDenied');
     const usersTableContainer = document.getElementById('usersTableContainer');
-    
+
     // Элементы модальных окон
     const userModal = document.getElementById('userModal');
     const deleteModal = document.getElementById('deleteModal');
@@ -16,20 +16,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveUserBtn = document.getElementById('saveUserBtn');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const userForm = document.getElementById('userForm');
-    
+
     // Initialize Controllers and Models
     const userController = new UserController();
     const userModel = new UserModel();
-    
+
     // Переменные для хранения состояния
     let currentUser = null;
     let userToDelete = null;
-    
+
     // Проверяем, является ли пользователь администратором через модель
     function checkAdminAccess() {
         return userModel.isAdmin();
     }
-    
+
     // Загружаем список пользователей
     async function loadUsers() {
         try {
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }
     }
-    
+
     // Отображаем таблицу пользователей
     function renderUsersTable(users) {
         if (!Array.isArray(users)) {
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return;
         }
-        
+
         if (users.length === 0) {
             usersTableContainer.innerHTML = `
                 <div class="no-data">
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             return;
         }
-        
+
         let tableHTML = `
             <table class="users-table">
                 <thead>
@@ -83,13 +83,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 </thead>
                 <tbody>
         `;
-        
+
         users.forEach(user => {
             if (!user || typeof user !== 'object') {
                 console.warn('Некорректный пользователь:', user);
                 return;
             }
-            
+
             // Форматируем дату с проверкой
             let formattedDate = 'Не указана';
             if (user.created_at) {
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.warn('Ошибка форматирования даты:', e);
                 }
             }
-            
+
             tableHTML += `
                 <tr>
                     <td>${user.id || 'N/A'}</td>
@@ -125,15 +125,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </tr>
             `;
         });
-        
+
         tableHTML += `
             </tbody>
         </table>
         `;
-        
+
         usersTableContainer.innerHTML = tableHTML;
     }
-    
+
     // Открываем модальное окно для добавления пользователя
     async function openAddUserModal() {
         try {
@@ -141,11 +141,11 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('userModalTitle').textContent = 'Добавить пользователя';
             document.getElementById('passwordHint').style.display = 'inline';
             userForm.reset();
-            
+
             // Загружаем и заполняем список ролей
             const roles = await userController.getRoles();
             const roleSelect = document.getElementById('userRole');
-            
+
             if (roles) {
                 roleSelect.innerHTML = '';
                 roles.forEach(role => {
@@ -161,29 +161,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     <option value="1">Администратор</option>
                 `;
             }
-            
+
             userModal.style.display = 'flex';
         } catch (error) {
             console.error('Ошибка открытия модального окна:', error);
             alert('Ошибка: ' + error.message);
         }
     }
-    
+
     // Открываем модальное окно для редактирования пользователя
-    window.editUser = async function(userId) {
+    window.editUser = async function (userId) {
         try {
             const user = await userController.getUserById(userId);
-            
+
             if (!user) {
                 throw new Error('Некорректный формат данных пользователя');
             }
-            
+
             currentUser = user;
-            
+
             // Загружаем роли для select
             const roles = await userController.getRoles();
             const roleSelect = document.getElementById('userRole');
-            
+
             if (roles) {
                 roleSelect.innerHTML = '';
                 roles.forEach(role => {
@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <option value="1" ${(user.role_id == 1 || user.role === 'Администратор') ? 'selected' : ''}>Администратор</option>
                 `;
             }
-            
+
             document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
             document.getElementById('passwordHint').style.display = 'inline';
             document.getElementById('userId').value = user.id;
@@ -210,22 +210,22 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('userEmail').value = user.email || '';
             document.getElementById('userPhone').value = user.phone || '';
             document.getElementById('userPassword').value = '';
-            
+
             userModal.style.display = 'flex';
         } catch (error) {
             console.error('Ошибка:', error);
             alert('Ошибка загрузки данных пользователя: ' + error.message);
         }
     }
-    
+
     // Подтверждение удаления пользователя
-    window.confirmDeleteUser = function(userId, userName) {
+    window.confirmDeleteUser = function (userId, userName) {
         userToDelete = userId;
-        document.getElementById('deleteMessage').textContent = 
+        document.getElementById('deleteMessage').textContent =
             `Вы действительно хотите удалить пользователя "${userName}"? Это действие нельзя отменить.`;
         deleteModal.style.display = 'flex';
     }
-    
+
     // Сохранение пользователя
     async function saveUser() {
         const userData = {
@@ -234,22 +234,22 @@ document.addEventListener('DOMContentLoaded', function() {
             phone: document.getElementById('userPhone').value || '',
             role_id: parseInt(document.getElementById('userRole').value)
         };
-        
+
         const password = document.getElementById('userPassword').value;
         if (password) {
             userData.password = password;
         }
-        
+
         try {
             const result = await userController.saveUser(userData, currentUser?.id || null);
-            
+
             if (result.success) {
                 closeModal(userModal);
                 loadUsers();
                 showSuccessMessage(
-                    currentUser ? 
-                    'Пользователь успешно обновлен!' : 
-                    'Пользователь успешно добавлен!'
+                    currentUser ?
+                        'Пользователь успешно обновлен!' :
+                        'Пользователь успешно добавлен!'
                 );
             } else {
                 throw new Error(result.error || 'Ошибка сохранения пользователя');
@@ -259,12 +259,12 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Ошибка сохранения пользователя: ' + error.message);
         }
     }
-    
+
     // Удаление пользователя
     async function deleteUser() {
         try {
             const result = await userController.deleteUser(userToDelete);
-            
+
             if (result.success) {
                 closeModal(deleteModal);
                 loadUsers();
@@ -278,29 +278,29 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Ошибка удаления пользователя: ' + error.message);
         }
     }
-    
+
     // Вспомогательные функции
     function openModal(modal) {
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
     }
-    
+
     function closeModal(modal) {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
     }
-    
+
     function showSuccessMessage(message) {
         const successMsg = document.createElement('div');
         successMsg.className = 'success-message';
         successMsg.textContent = message;
         document.body.appendChild(successMsg);
-        
+
         setTimeout(() => {
             successMsg.remove();
         }, 3000);
     }
-    
+
     // Инициализация
     function initAdminPage() {
         if (!checkAdminAccess()) {
@@ -308,10 +308,10 @@ document.addEventListener('DOMContentLoaded', function() {
             accessDenied.style.display = 'block';
             return;
         }
-        
+
         // Загружаем пользователей
         loadUsers();
-        
+
         // Назначаем обработчики событий
         addUserBtn.addEventListener('click', openAddUserModal);
         closeUserModal.addEventListener('click', () => closeModal(userModal));
@@ -320,24 +320,10 @@ document.addEventListener('DOMContentLoaded', function() {
         cancelDeleteBtn.addEventListener('click', () => closeModal(deleteModal));
         saveUserBtn.addEventListener('click', saveUser);
         confirmDeleteBtn.addEventListener('click', deleteUser);
-        
-        // Закрытие модальных окон по клику на фон
-        [userModal, deleteModal].forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeModal(modal);
-                }
-            });
-        });
-        
-        // Отправка формы по Enter
-        userForm.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                saveUserBtn.click();
-            }
-        });
+
+
+       
     }
-    
+
     initAdminPage();
 });

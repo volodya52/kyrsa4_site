@@ -13,7 +13,7 @@ class CarController {
         const cars = await this.carModel.getAllCars();
         return cars;
     }
-    
+
     // Добавлен метод getAllCars для совместимости
     async getAllCars() {
         return await this.carModel.getAllCars();
@@ -21,7 +21,7 @@ class CarController {
 
     async filterCars(filters) {
         let cars = await this.carModel.getAllCars();
-        
+
         // Текстовый поиск
         if (filters.search) {
             const searchTerm = filters.search.toLowerCase();
@@ -103,20 +103,20 @@ class CarController {
         }
 
         const isFavorite = await this.favoriteModel.checkIfFavorite(carId);
-        
+
         if (isFavorite) {
             const result = await this.favoriteModel.removeFavorite(carId);
-            return { 
-                success: result.success, 
+            return {
+                success: result.success,
                 message: `"${carName}" удален из избранного`,
-                isFavorite: false 
+                isFavorite: false
             };
         } else {
             const result = await this.favoriteModel.addFavorite(carId);
-            return { 
-                success: result.success, 
+            return {
+                success: result.success,
                 message: `"${carName}" добавлен в избранное`,
-                isFavorite: true 
+                isFavorite: true
             };
         }
     }
@@ -132,16 +132,16 @@ class CarController {
     async deleteCar(carId) {
         return await this.carModel.deleteCar(carId);
     }
-    
+
     // Добавьте эти методы для совместимости с AdminCarsView.js
     async addCar(carData) {
         return await this.carModel.saveCar(carData);
     }
-    
+
     async updateCar(carId, carData) {
         return await this.carModel.saveCar(carData, carId);
     }
-    
+
     // Получение локально сохраненных автомобилей
     getLocalCars() {
         try {

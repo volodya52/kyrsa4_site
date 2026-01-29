@@ -1,4 +1,4 @@
-// view/SignInView.js - UPDATED FOR MVC
+
 class SignInView {
     constructor() {
         console.log('SignInView initializing...');

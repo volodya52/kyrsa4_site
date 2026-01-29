@@ -1,8 +1,7 @@
-// views/NewsAdminView.js - UPDATED FOR MVC
+
 class NewsAdminView {
     constructor() {
-        console.log('=== NewsAdminView initializing ===');
-        
+       
         // Сохраняем элементы
         this.newsTableBody = document.getElementById('newsTableBody');
         this.loading = document.getElementById('loading');

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Управление новостями автосалона">
-    <title>Управление новостями - Админ панель</title>
+    <title>Управление новостями</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,27 +12,27 @@
         <div class="container">
             <nav class="nav">
                 <div class="logo">
-                    <span class="logo-text">АВТОСАЛОН - Админ</span>
+                    <span class="logo-text">АВТОСАЛОН</span>
                 </div>
                 
                 <ul class="nav-menu" id="navMenu">
-    <li><a href="index.html">Главная</a></li>
-    <li><a href="cars.html">Автомобили</a></li>
-    <li><a href="uslugi.html">Услуги</a></li>
-    <li><a href="about.html">О нас</a></li>
-    <li><a href="contact.html">Контакты</a></li>
-    <li><a href="news.html" class="active">Новости</a></li>
-    <li id="carsTabItem" style="display: none;">
-        <a href="carsCRUD.html">Управление авто</a>
-    </li>
-    <li id="usersTabItem" style="display: none;">
-        <a href="users.html">Пользователи</a>
-    </li>
-    <li id="newsTabItem" style="display: none;">
-        <a href="newsCRUD.html">Управление новостями</a> <!-- ИЗМЕНЕНО -->
-    </li>
-    <li><a href="#" id="signinLink">Войти</a></li>
-</ul>
+                    <li><a href="index.html">Главная</a></li>
+                    <li><a href="cars.html">Автомобили</a></li>
+                    <li><a href="uslugi.html">Услуги</a></li>
+                    <li><a href="about.html">О нас</a></li>
+                    <li><a href="contact.html">Контакты</a></li>
+                    <li><a href="news.html" class="active">Новости</a></li>
+                    <li id="carsTabItem" style="display: none;">
+                        <a href="carsCRUD.html">Управление авто</a>
+                    </li>
+                    <li id="usersTabItem" style="display: none;">
+                        <a href="users.html">Пользователи</a>
+                    </li>
+                    <li id="newsTabItem" style="display: none;">
+                        <a href="newsCRUD.html">Управление новостями</a> 
+                    </li>
+                    <li><a href="#" id="signinLink">Войти</a></li>
+                </ul>
             </nav>
         </div>
     </header>
@@ -46,7 +46,7 @@
             </div>
         </div>
 
-        <!-- News Table -->
+     
         <div class="table-container">
             <table class="users-table">
                 <thead>
@@ -59,12 +59,11 @@
                     </tr>
                 </thead>
                 <tbody id="newsTableBody">
-                    <!-- News will be loaded here -->
+                    
                 </tbody>
             </table>
         </div>
 
-        <!-- Loading and No Data States -->
         <div class="loading" id="loading" style="display: none;">
             <div class="spinner"></div>
             <p>Загружаем новости...</p>
@@ -76,7 +75,6 @@
         </div>
     </main>
 
-    <!-- News Form Modal -->
     <div class="modal-overlay modal-user-form" id="newsFormModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -120,7 +118,6 @@
                     <div class="form-group">
                         <label>Автомобиль</label>
                         <div id="carInfo" class="car-info-summary" style="display: none;">
-                            <!-- Car info will be displayed here -->
                         </div>
                     </div>
                     
@@ -133,6 +130,35 @@
             </div>
         </div>
     </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4 class="footer-title">АВТОСАЛОН</h4>
+                    <p class="footer-text">Ваш надежный партнер в мире автомобилей</p>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Навигация</h4>
+                    <ul class="footer-links">
+                        <li><a href="index.html">Главная</a></li>
+                        <li><a href="cars.html">Автомобили</a></li>
+                        <li><a href="uslugi.html">Услуги</a></li>
+                        <li><a href="about.html">О нас</a></li>
+                        <li><a href="contact.html">Контакты</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4 class="footer-title">Контакты</h4>
+                    <ul class="footer-links">
+                        <li>+7 (912) 686-51-44</li>
+                        <li>primeravtosalona@gmail.com</li>
+                        <li>Екатеринбург, ул. Поканезнаю, 22</li>
+                    </ul>
+                </div>
+            </div>          
+        </div>
+    </footer>
 
     <script src="../models/NewsModel.js"></script>
     <script src="../models/UserModel.js"></script>

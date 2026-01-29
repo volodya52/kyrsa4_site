@@ -9,22 +9,22 @@ class NewsView {
         this.modalNewsTitle = document.getElementById('modalNewsTitle');
         this.modalNewsBody = document.getElementById('modalNewsBody');
         this.closeNewsModal = document.getElementById('closeNewsModal');
-        
+
         // Initialize Controller
         this.newsController = new NewsController();
         this.newsController.setView(this);
-        
+
         this.currentFilter = 'all';
         this.news = [];
-        
+
         this.init();
     }
-    
+
     init() {
         this.loadNews();
         this.setupEventListeners();
     }
-    
+
     setupEventListeners() {
         // Filter buttons
         this.filterButtons.forEach(btn => {
@@ -35,12 +35,12 @@ class NewsView {
                 this.renderNews();
             });
         });
-        
+
         // Modal close
         this.closeNewsModal.addEventListener('click', () => {
             this.newsDetailModal.style.display = 'none';
         });
-        
+
         // Close modal on outside click
         this.newsDetailModal.addEventListener('click', (e) => {
             if (e.target === this.newsDetailModal) {
@@ -48,10 +48,10 @@ class NewsView {
             }
         });
     }
-    
+
     async loadNews() {
         this.showLoading();
-        
+
         try {
             this.news = await this.newsController.loadNews();
             this.renderNews();
@@ -60,30 +60,30 @@ class NewsView {
             this.showError('Ошибка при загрузке новостей');
         }
     }
-    
+
     renderNews() {
         const filteredNews = this.filterNews();
-        
+
         if (filteredNews.length === 0) {
             this.showNoNews();
             return;
         }
-        
+
         this.hideLoading();
         this.hideNoNews();
-        
+
         this.newsGrid.innerHTML = filteredNews.map(news => this.createNewsCard(news)).join('');
-        
+
         // Add click listeners to news cards
         document.querySelectorAll('.news-card').forEach(card => {
             card.addEventListener('click', () => this.showNewsDetail(card.dataset.id));
         });
     }
-    
+
     filterNews() {
         return this.newsController.filterNewsByType(this.news, this.currentFilter);
     }
-    
+
     createNewsCard(news) {
         const typeLabels = {
             'news': 'Новость',
@@ -91,20 +91,20 @@ class NewsView {
             'reviews': 'Обзор',
             'events': 'Событие'
         };
-        
+
         const typeClass = `news-type-${news.type}`;
         const typeLabel = typeLabels[news.type] || news.type;
-        
-        const carInfo = news.car_brand && news.car_model 
+
+        const carInfo = news.car_brand && news.car_model
             ? `<div class="news-car-info">${news.car_brand} ${news.car_model}</div>`
             : '';
-        
+
         const imageUrl = news.image_url || 'https://via.placeholder.com/400x250?text=Новость';
         const maxLength = 150;
-        const description = news.description.length > maxLength 
-            ? news.description.substring(0, maxLength) + '...' 
+        const description = news.description.length > maxLength
+            ? news.description.substring(0, maxLength) + '...'
             : news.description;
-        
+
         return `
             <div class="news-card" data-id="${news.id}">
                 <div class="news-image">
@@ -123,36 +123,36 @@ class NewsView {
             </div>
         `;
     }
-    
+
     async showNewsDetail(newsId) {
         try {
             const news = this.news.find(n => n.id == newsId);
             if (!news) return;
-            
+
             this.modalNewsTitle.textContent = news.title;
-            
+
             const typeLabels = {
                 'news': 'Новость',
                 'promotions': 'Акция',
                 'reviews': 'Обзор',
                 'events': 'Событие'
             };
-            
+
             const typeLabel = typeLabels[news.type] || news.type;
-            const carInfo = news.car_brand && news.car_model 
+            const carInfo = news.car_brand && news.car_model
                 ? `<p><strong>Автомобиль:</strong> ${news.car_brand} ${news.car_model}</p>`
                 : '';
-            
-            const authorInfo = news.author_name 
+
+            const authorInfo = news.author_name
                 ? `<p><strong>Автор:</strong> ${news.author_name}</p>`
                 : '';
-            
-            const imageUrl = news.image_url 
+
+            const imageUrl = news.image_url
                 ? `<div class="news-detail-image">
                      <img src="${news.image_url}" alt="${news.title}">
                    </div>`
                 : '';
-            
+
             this.modalNewsBody.innerHTML = `
                 ${imageUrl}
                 <div class="news-meta">
@@ -164,33 +164,33 @@ class NewsView {
                     ${news.description}
                 </div>
             `;
-            
+
             this.newsDetailModal.style.display = 'flex';
         } catch (error) {
             console.error('Ошибка отображения новости:', error);
         }
     }
-    
+
     showLoading() {
         this.loading.style.display = 'block';
         this.noNews.style.display = 'none';
         this.newsGrid.innerHTML = '';
     }
-    
+
     hideLoading() {
         this.loading.style.display = 'none';
     }
-    
+
     showNoNews() {
         this.hideLoading();
         this.noNews.style.display = 'block';
         this.newsGrid.innerHTML = '';
     }
-    
+
     hideNoNews() {
         this.noNews.style.display = 'none';
     }
-    
+
     showError(message) {
         this.hideLoading();
         this.newsGrid.innerHTML = `
