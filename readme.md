@@ -7,9 +7,9 @@
 ---
 
 Для запуска нужно установить:
-Node.js, sqlite3, express, body-parser, path.
-Далее нужно ввести в терминал или в командную строку следующую команду : cd index
-И запустить сервер : node server.js
+- Node.js, sqlite3, express, body-parser, path.
+- Далее нужно ввести в терминал или в командную строку следующую команду : cd index
+- И запустить сервер : node server.js
 
 ---
 
