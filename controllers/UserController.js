@@ -1,6 +1,7 @@
 class UserController {
     constructor() {
         this.userModel = new UserModel();
+        this.rolesCache = null;
     }
 
     async getUsers() {
@@ -73,20 +74,22 @@ class UserController {
     }
 
     async getRoles() {
-        try {
-            const token = this.userModel.getToken();
-            const response = await fetch('/api/admin/roles', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+        // Если роли уже загружены, возвращаем из кэша
+        if (this.rolesCache) {
+            console.log('Возвращаем роли из кэша контроллера');
+            return this.rolesCache;
+        }
 
-            if (response.ok) {
-                const data = await response.json();
-                return data.success ? data.roles : null;
-            }
-            return null;
+        try {
+            const roles = await this.userModel.getRoles();
+            this.rolesCache = roles; // Сохраняем в кэш
+            return roles;
         } catch (error) {
-            console.error('Error loading roles:', error);
-            return null;
+            console.error('Ошибка загрузки ролей:', error);
+            return [
+                { id: 1, name: 'Администратор' },
+                { id: 2, name: 'Клиент' }
+            ];
         }
     }
 }

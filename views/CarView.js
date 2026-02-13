@@ -596,7 +596,7 @@ class CarView {
         const statusMap = {
             'new': 'Новый',
             'used': 'С пробегом',
-            'В наличии': 'В наличии',
+            'В наличии': 'Новый',
             'Продано': 'Продано',
             'На заказ': 'На заказ',
             'Новый': 'Новый',
@@ -609,11 +609,11 @@ class CarView {
         const statusClassMap = {
             'new': 'badge-featured',
             'used': 'status-used',
+            'Новый': 'badge-featured',
+            'С пробегом': 'status-used',
             'В наличии': 'status-in-stock',
             'Продано': 'status-sold',
-            'На заказ': 'status-preorder',
-            'Новый': 'badge-featured',
-            'С пробегом': 'status-used'
+            'На заказ': 'status-preorder'
         };
         return statusClassMap[status] || 'status-default';
     }

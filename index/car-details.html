@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
     <title>Детали автомобиля</title>
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -39,11 +41,11 @@
         <div class="container">
             <a href="cars.html" class="back-button">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
                 Назад к каталогу
             </a>
-            
+
             <div class="car-details-container">
                 <!-- Левая колонка - изображение автомобиля -->
                 <div class="car-image-section">
@@ -66,13 +68,13 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Описание -->
                     <div class="car-description">
                         <h3>Описание</h3>
                         <p id="carDescription">Загрузка описания...</p>
                     </div>
-                    
+
                     <!-- Таблица характеристик -->
                     <div class="car-specifications">
                         <h3>Характеристики</h3>
@@ -119,24 +121,29 @@
                             </tr>
                         </table>
                     </div>
-                    
+
                     <!-- Кнопки действий -->
                     <div class="car-actions">
                         <button class="btn btn-buy" id="buyCar">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                             Купить автомобиль
                         </button>
                         <button class="btn btn-credit" id="creditBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                             </svg>
                             Рассчитать кредит
                         </button>
                         <button class="btn btn-favorite" id="favoriteBtn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                             </svg>
                             В избранное
                         </button>
@@ -191,12 +198,12 @@
 
     <!-- Модальное окно кредитного калькулятора -->
     <div class="modal-overlay" id="creditModal">
-        <div class="modal-content modal-wide">
+        <div class="modal-content modal-wide modal-scrollable">
             <div class="modal-header">
                 <h2>Кредитный калькулятор</h2>
                 <button class="modal-close" id="closeCreditModal">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body modal-body-scroll">
                 <div class="credit-calculator-container">
                     <div class="car-info-summary">
                         <div class="car-info-image">
@@ -207,7 +214,7 @@
                             <div class="car-price" id="calcCarPrice"></div>
                         </div>
                     </div>
-                    
+
                     <div class="calculator-form">
                         <div class="calculator-inputs">
                             <div class="form-group">
@@ -215,7 +222,8 @@
                                 <div class="input-with-slider">
                                     <input type="number" id="calcInitialPayment" min="0" placeholder="200000">
                                     <div class="slider-container">
-                                        <input type="range" id="calcInitialPaymentRange" min="0" max="100" value="20" step="5">
+                                        <input type="range" id="calcInitialPaymentRange" min="0" max="100" value="20"
+                                            step="5">
                                         <div class="slider-labels">
                                             <span>0%</span>
                                             <span>100%</span>
@@ -230,7 +238,8 @@
                                 <div class="input-with-slider">
                                     <input type="number" id="calcCreditTerm" min="12" max="84" value="36" step="12">
                                     <div class="slider-container">
-                                        <input type="range" id="calcCreditTermRange" min="12" max="84" value="36" step="12">
+                                        <input type="range" id="calcCreditTermRange" min="12" max="84" value="36"
+                                            step="12">
                                         <div class="slider-labels">
                                             <span>1 год</span>
                                             <span>7 лет</span>
@@ -242,10 +251,11 @@
                             <div class="form-group">
                                 <label for="calcInterestRate">Процентная ставка</label>
                                 <select id="calcInterestRate">
-                                    <option value="8.5">8.5% (Базовая)</option>
-                                    <option value="7.9">7.9% (С господдержкой)</option>
-                                    <option value="9.9">9.9% (Стандартная)</option>
-                                    <option value="11.5">11.5% (Без первоначального взноса)</option>
+                                    <option value="16.9">ВТБ (наличные) - 16.9%</option>
+                                    <option value="14.9">ОТП-банк - 14.9%</option>
+                                    <option value="18.99">Альфа-банк - 18.99%</option>
+                                    <option value="25.5">Сбербанк - 25.5%</option>
+                                    <option value="22.9">Т-банк - 22.9%</option>
                                 </select>
                             </div>
                         </div>
@@ -274,9 +284,10 @@
                     </div>
 
                     <button class="btn btn-primary btn-calculate" id="calcCalculateCredit">Рассчитать</button>
-                    
+
                     <div class="calculator-info">
-                        <p><strong>Примечание:</strong> Расчет является предварительным. Для получения точных условий кредита обратитесь к менеджеру.</p>
+                        <p><strong>Примечание:</strong> Расчет является предварительным. Для получения точных условий
+                            кредита обратитесь к менеджеру.</p>
                     </div>
                 </div>
             </div>
@@ -397,4 +408,5 @@
     <script src="../views/CarDetailsView.js"></script>
     <script src="../views/SignInView.js"></script>
 </body>
+
 </html>

@@ -1,20 +1,21 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const db = require('../database.js'); 
+const db = require('../database.js');
 const { error } = require('console');
-
-
 
 const app = express();
 const PORT = 5000;
 
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
+
 app.use(express.static(path.join(__dirname, '.'))); 
 app.use('/models', express.static(path.join(__dirname, '../models')));
 app.use('/controllers', express.static(path.join(__dirname, '../controllers')));
 app.use('/views', express.static(path.join(__dirname, '../views')));
+app.use('/img', express.static(path.join(__dirname, 'img')));
+
 
 // Простое хранилище сессий (в памяти)
 const sessions = {};
@@ -176,7 +177,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// 2. АВТОМОБИЛИ
+// 2. АВТОМОБИЛИ (ПУБЛИЧНЫЕ ЭНДПОИНТЫ)
 app.get('/api/cars', async (req, res) => {
     try {
         const filters = {
@@ -208,7 +209,7 @@ app.get('/api/cars', async (req, res) => {
                 color: car.Color,
                 description: car.Description,
                 status: car.Status,
-                image_url: car.Image_url,
+                image_url: car.Image_url || 'https://via.placeholder.com/300x200?text=Автомобиль',
             }))
         });
     } catch (error) {
@@ -260,8 +261,7 @@ app.get('/api/cars/:id', async (req, res) => {
     }
 });
 
-
-// 4. НОВОСТИ И АКЦИИ
+// 3. НОВОСТИ И АКЦИИ (ПУБЛИЧНЫЕ)
 app.get('/api/news', async (req, res) => {
     try {
         const news = await db.getAllNews();
@@ -313,7 +313,7 @@ app.get('/api/news/:type', async (req, res) => {
     }
 });
 
-// 5. ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
+// 4. ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
 app.get('/api/user', requireAuth, async (req, res) => {
     try {
         // Получаем свежие данные пользователя из БД
@@ -350,318 +350,7 @@ app.post('/api/logout', requireAuth, (req, res) => {
     res.json({ success: true, message: 'Выход выполнен' });
 });
 
-
-app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const users = await db.getAllUsers();
-        
-        res.json({
-            success: true,
-            users: users.map(u => ({
-                id: u.ID,
-                name: u.Name,
-                email: u.Email,
-                phone: u.Phone || 'Не указан',
-                role: u.Role_Name || 'Клиент',
-                role_id: u.Role_ID,
-                created_at: u.Created_At || new Date().toISOString()
-            }))
-        });
-    } catch (error) {
-        console.error('Ошибка получения пользователей:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-// Получить пользователя по ID
-app.put('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const userId = parseInt(req.params.id);
-        const { name, email, phone, password, role_id } = req.body;
-
-        // Проверяем существование пользователя
-        const existingUser = await db.findUserById(userId);
-        if (!existingUser) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Пользователь не найден' 
-            });
-        }
-
-        // Проверяем email на уникальность, если он изменился
-        if (email && email !== existingUser.Email) {
-            const userWithEmail = await db.findUserByEmail(email);
-            if (userWithEmail && userWithEmail.ID !== userId) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'Пользователь с таким email уже существует' 
-                });
-            }
-        }
-
-        // Обновляем пользователя
-        const result = await db.updateUser(userId, {
-            name: name || existingUser.Name,
-            email: email || existingUser.Email,
-            phone: phone !== undefined ? phone : existingUser.Phone,
-            password: password || null,
-            role_id: role_id || existingUser.Role_ID
-        });
-
-        if (!result.success) {
-            return res.status(400).json({ 
-                success: false, 
-                error: result.error 
-            });
-        }
-
-        // Получаем обновленного пользователя
-        const updatedUser = await db.findUserById(userId);
-        
-        res.json({
-            success: true,
-            user: {
-                id: updatedUser.ID, // Исправлено: было user.ID, стало updatedUser.ID
-                name: updatedUser.Name,
-                email: updatedUser.Email,
-                phone: updatedUser.Phone || '',
-                role: updatedUser.Role_Name || 'Клиент',
-                role_id: updatedUser.Role_ID
-            }
-        });
-
-    } catch (error) {
-        console.error('Ошибка обновления пользователя:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-// Создать нового пользователя
-app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const { name, email, password, phone, role_id = 2 } = req.body;
-
-        // Валидация
-        if (!name || !email || !password) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Имя, email и пароль обязательны' 
-            });
-        }
-
-        // Проверка существования пользователя
-        const existingUser = await db.findUserByEmail(email);
-        if (existingUser) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Пользователь с таким email уже существует' 
-            });
-        }
-
-        // Создание пользователя
-        const result = await db.addUser(name, email, password, phone, role_id);
-        
-        if (!result.success) {
-            return res.status(400).json({ 
-                success: false, 
-                error: result.error 
-            });
-        }
-
-        // Получаем созданного пользователя
-        const newUser = await db.findUserById(result.id);
-        
-        res.json({
-            success: true,
-            user: {
-                id: newUser.ID,
-                name: newUser.Name,
-                email: newUser.Email,
-                phone: newUser.Phone || '',
-                role: newUser.Role_Name || 'Клиент',
-                role_id: newUser.Role_ID
-            }
-        });
-
-    } catch (error) {
-        console.error('Ошибка создания пользователя:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const user = await db.findUserById(parseInt(req.params.id));
-        
-        if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Пользователь не найден' 
-            });
-        }
-        
-        res.json({
-            success: true,
-            user: {
-                id: user.ID,
-                name: user.Name,
-                email: user.Email,
-                phone: user.Phone || '',
-                role: user.Role_Name || 'Клиент',
-                role_id: user.Role_ID
-            }
-        });
-    } catch (error) {
-        console.error('Ошибка получения пользователя:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-// Обновить пользователя
-app.put('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const userId = parseInt(req.params.id);
-        const { name, email, phone, password, role_id } = req.body;
-
-        // Проверяем существование пользователя
-        const existingUser = await db.findUserById(userId);
-        if (!existingUser) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Пользователь не найден' 
-            });
-        }
-
-        // Проверяем email на уникальность, если он изменился
-        if (email && email !== existingUser.Email) {
-            const userWithEmail = await db.findUserByEmail(email);
-            if (userWithEmail && userWithEmail.ID !== userId) {
-                return res.status(400).json({ 
-                    success: false, 
-                    error: 'Пользователь с таким email уже существует' 
-                });
-            }
-        }
-
-        // Обновляем пользователя
-        const result = await db.updateUser(userId, {
-            name: name || existingUser.Name,
-            email: email || existingUser.Email,
-            phone: phone !== undefined ? phone : existingUser.Phone,
-            password: password || null,
-            role_id: role_id || existingUser.Role_ID
-        });
-
-        if (!result.success) {
-            return res.status(400).json({ 
-                success: false, 
-                error: result.error 
-            });
-        }
-
-        // Получаем обновленного пользователя
-        const updatedUser = await db.findUserById(userId);
-        
-        res.json({
-        success: true,
-        user: {
-            id: user.ID,
-            name: user.Name,
-            email: user.Email,
-            phone: user.Phone || '',
-            role: user.Role_Name || 'Клиент',
-            role_id: user.Role_ID
-        // Убрали: created_at: user.Created_At || new Date().toISOString()
-    }
-});
-
-    } catch (error) {
-        console.error('Ошибка обновления пользователя:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-// Удалить пользователя
-app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const userId = parseInt(req.params.id);
-        const currentUser = req.user;
-
-        // Нельзя удалить самого себя
-        if (userId === currentUser.ID) {
-            return res.status(400).json({ 
-                success: false, 
-                error: 'Нельзя удалить самого себя' 
-            });
-        }
-
-        // Проверяем существование пользователя
-        const existingUser = await db.findUserById(userId);
-        if (!existingUser) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Пользователь не найден' 
-            });
-        }
-
-        // Удаляем пользователя
-        const result = await db.deleteUser(userId);
-        
-        if (!result.success) {
-            return res.status(400).json({ 
-                success: false, 
-                error: result.error 
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Пользователь успешно удален'
-        });
-
-    } catch (error) {
-        console.error('Ошибка удаления пользователя:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-app.get('/api/user/roles', requireAuth, async (req, res) => {
-    try {
-        const roles = await db.getAllRoles();
-        
-        res.json({
-            success: true,
-            user: req.user,
-            roles: roles,
-            isAdmin: req.user.Role_Name === 'Администратор' || req.user.Role_ID === 1
-        });
-    } catch (error) {
-        console.error('Ошибка получения ролей:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
+// 5. ИЗБРАННОЕ
 app.post('/api/user/favorites', requireAuth, async (req, res) => {
     try {
         const { carId } = req.body;
@@ -734,7 +423,6 @@ app.get('/api/user/favorites', requireAuth, async (req, res) => {
     }
 });
 
-
 app.delete('/api/user/favorites/:carId', requireAuth, async (req, res) => {
     try {
         const carId = parseInt(req.params.carId);
@@ -785,151 +473,306 @@ app.get('/api/user/favorites/check/:carId', requireAuth, async (req, res) => {
     }
 });
 
-app.post('/api/admin/news', requireAuth, requireAdmin, async (req, res) => {
+app.get('/api/user/roles', requireAuth, async (req, res) => {
     try {
-        const { title, description, type, car_id, image_url } = req.body;
+        const roles = await db.getAllRoles();
+        
+        res.json({
+            success: true,
+            user: req.user,
+            roles: roles,
+            isAdmin: req.user.Role_Name === 'Администратор' || req.user.Role_ID === 1
+        });
+    } catch (error) {
+        console.error('Ошибка получения ролей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// ==================== АДМИН ЭНДПОИНТЫ ====================
+
+// ----- УПРАВЛЕНИЕ АВТОМОБИЛЯМИ (АДМИН) -----
+
+// Получить все автомобили для админки
+app.get('/api/admin/cars', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const cars = await db.getAllCars();
+        
+        res.json({
+            success: true,
+            cars: cars.map(car => ({
+                id: car.ID,
+                brand: car.Brand,
+                model: car.Model,
+                year: car.Year,
+                price: car.Price,
+                mileage: car.Mileage,
+                engineSize: car.EngineSize,
+                horsepower: car.Horsepower,
+                transmission: car.Transmission,
+                fuel: car.Fuel,
+                body: car.Body,
+                color: car.Color,
+                description: car.Description,
+                status: car.Status,
+                image_url: car.Image_url || 'https://via.placeholder.com/300x200?text=Автомобиль',
+            }))
+        });
+    } catch (error) {
+        console.error('Ошибка получения автомобилей для админки:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Создать новый автомобиль (с поддержкой base64)
+app.post('/api/admin/cars', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const {
+            brand, model, year, price, mileage, engineSize,
+            horsepower, transmission, fuel, body, color,
+            description, status, image_url
+        } = req.body;
 
         // Валидация
-        if (!title || !description || !type) {
+        if (!brand || !model || !year || !price) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'Заполните все обязательные поля' 
+                error: 'Заполните обязательные поля (марка, модель, год, цена)' 
             });
         }
 
-        const newsData = {
-            title,
-            description,
-            type,
-            userId: req.user.ID,
-            carId: car_id || null,
-            image_url: image_url || null
+        // Проверка на отрицательные значения
+        if (price < 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Цена не может быть отрицательной' 
+            });
+        }
+
+        if (mileage && mileage < 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Пробег не может быть отрицательным' 
+            });
+        }
+
+        // Проверка валидности base64 изображения (если предоставлено)
+        if (image_url && !image_url.startsWith('data:image')) {
+            // Если это не base64, проверяем, что это валидный URL
+            try {
+                new URL(image_url);
+            } catch (e) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Невалидный формат изображения. Используйте base64 или корректный URL' 
+                });
+            }
+        }
+
+        const carData = {
+            brand,
+            model,
+            year: parseInt(year),
+            price: parseFloat(price),
+            mileage: mileage ? parseInt(mileage) : 0,
+            engineSize: engineSize || null,
+            horsepower: horsepower ? parseInt(horsepower) : null,
+            transmission: transmission || 'Автомат',
+            fuel: fuel || 'Бензин',
+            body: body || 'Седан',
+            color: color || 'Черный',
+            description: description || '',
+            status: status || 'new',
+            image_url: image_url || 'https://via.placeholder.com/600x400?text=Автомобиль'
         };
 
-        const result = await db.addNews(newsData);
+        const result = await db.createCar(carData);
 
         if (result.success) {
-            const news = await db.getNewsById(result.id);
+            // Получаем созданный автомобиль для ответа
+            const newCar = await db.getCarById(result.id);
             
             res.status(201).json({
                 success: true,
-                message: 'Новость успешно создана',
-                news: {
-                    id: news.ID,
-                    title: news.Title,
-                    description: news.Description,
-                    type: news.Type,
-                    author_name: req.user.Name,
-                    car_brand: news.Car_Brand,
-                    car_model: news.Car_Model,
-                    image_url: news.Image_url,
-                    created_at: news.Created_At
+                message: 'Автомобиль успешно добавлен',
+                carId: result.id,
+                car: {
+                    id: newCar.ID,
+                    brand: newCar.Brand,
+                    model: newCar.Model,
+                    year: newCar.Year,
+                    price: newCar.Price,
+                    mileage: newCar.Mileage,
+                    engineSize: newCar.EngineSize,
+                    horsepower: newCar.Horsepower,
+                    transmission: newCar.Transmission,
+                    fuel: newCar.Fuel,
+                    body: newCar.Body,
+                    color: newCar.Color,
+                    description: newCar.Description,
+                    status: newCar.Status,
+                    image_url: newCar.Image_url
                 }
             });
         } else {
             res.status(400).json({ 
                 success: false, 
-                error: result.error 
+                error: result.error || 'Ошибка при создании автомобиля' 
             });
         }
 
     } catch (error) {
-        console.error('Ошибка создания новости:', error);
+        console.error('Ошибка создания автомобиля:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'Ошибка сервера' 
+            error: 'Ошибка сервера: ' + error.message 
         });
     }
 });
 
-app.put('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
+// Обновить автомобиль (с поддержкой base64)
+app.put('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const newsId = parseInt(req.params.id);
-        const { title, description, type, car_id, image_url } = req.body;
+        const carId = parseInt(req.params.id);
+        const {
+            brand, model, year, price, mileage, engineSize,
+            horsepower, transmission, fuel, body, color,
+            description, status, image_url
+        } = req.body;
 
-        // Проверяем существование новости
-        const existingNews = await db.getNewsById(newsId);
-        if (!existingNews) {
+        // Проверяем существование автомобиля
+        const existingCar = await db.getCarById(carId);
+        if (!existingCar) {
             return res.status(404).json({ 
                 success: false, 
-                error: 'Новость не найдена' 
+                error: 'Автомобиль не найден' 
             });
         }
 
-        // Обновляем новость
-        const result = await db.updateNews(newsId, {
-            title: title || existingNews.Title,
-            description: description || existingNews.Description,
-            type: type || existingNews.Type,
-            carId: car_id || existingNews.Car_ID,
-            image_url: image_url || existingNews.Image_url,
-            userId: req.user.ID
-        });
+        // Валидация отрицательных значений
+        if (price && price < 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Цена не может быть отрицательной' 
+            });
+        }
+
+        if (mileage && mileage < 0) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Пробег не может быть отрицательным' 
+            });
+        }
+
+        // Проверка валидности base64 изображения (если предоставлено)
+        if (image_url && !image_url.startsWith('data:image')) {
+            try {
+                new URL(image_url);
+            } catch (e) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Невалидный формат изображения. Используйте base64 или корректный URL' 
+                });
+            }
+        }
+
+        const carData = {
+            brand: brand || existingCar.Brand,
+            model: model || existingCar.Model,
+            year: year ? parseInt(year) : existingCar.Year,
+            price: price ? parseFloat(price) : existingCar.Price,
+            mileage: mileage !== undefined ? parseInt(mileage) : existingCar.Mileage,
+            engineSize: engineSize || existingCar.EngineSize,
+            horsepower: horsepower ? parseInt(horsepower) : existingCar.Horsepower,
+            transmission: transmission || existingCar.Transmission,
+            fuel: fuel || existingCar.Fuel,
+            body: body || existingCar.Body,
+            color: color || existingCar.Color,
+            description: description !== undefined ? description : existingCar.Description,
+            status: status || existingCar.Status,
+            image_url: image_url !== undefined ? image_url : existingCar.Image_url
+        };
+
+        const result = await db.updateCar(carId, carData);
 
         if (result.success) {
-            const updatedNews = await db.getNewsById(newsId);
+            // Получаем обновленный автомобиль
+            const updatedCar = await db.getCarById(carId);
             
             res.json({
                 success: true,
-                message: 'Новость успешно обновлена',
-                news: {
-                    id: updatedNews.ID,
-                    title: updatedNews.Title,
-                    description: updatedNews.Description,
-                    type: updatedNews.Type,
-                    author_name: req.user.Name,
-                    car_brand: updatedNews.Car_Brand,
-                    car_model: updatedNews.Car_Model,
-                    image_url: updatedNews.Image_url,
-                    created_at: updatedNews.Created_At
+                message: 'Автомобиль успешно обновлен',
+                car: {
+                    id: updatedCar.ID,
+                    brand: updatedCar.Brand,
+                    model: updatedCar.Model,
+                    year: updatedCar.Year,
+                    price: updatedCar.Price,
+                    mileage: updatedCar.Mileage,
+                    engineSize: updatedCar.EngineSize,
+                    horsepower: updatedCar.Horsepower,
+                    transmission: updatedCar.Transmission,
+                    fuel: updatedCar.Fuel,
+                    body: updatedCar.Body,
+                    color: updatedCar.Color,
+                    description: updatedCar.Description,
+                    status: updatedCar.Status,
+                    image_url: updatedCar.Image_url
                 }
             });
         } else {
             res.status(400).json({ 
                 success: false, 
-                error: result.error 
+                error: result.error || 'Ошибка при обновлении автомобиля' 
             });
         }
 
     } catch (error) {
-        console.error('Ошибка обновления новости:', error);
+        console.error('Ошибка обновления автомобиля:', error);
         res.status(500).json({ 
             success: false, 
-            error: 'Ошибка сервера' 
+            error: 'Ошибка сервера: ' + error.message 
         });
     }
 });
 
-app.delete('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
+// Удалить автомобиль
+app.delete('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const newsId = parseInt(req.params.id);
+        const carId = parseInt(req.params.id);
 
-        // Проверяем существование новости
-        const existingNews = await db.getNewsById(newsId);
-        if (!existingNews) {
+        // Проверяем существование автомобиля
+        const existingCar = await db.getCarById(carId);
+        if (!existingCar) {
             return res.status(404).json({ 
                 success: false, 
-                error: 'Новость не найдена' 
+                error: 'Автомобиль не найден' 
             });
         }
 
-        // Удаляем новость
-        const result = await db.deleteNews(newsId);
+        // Удаляем автомобиль
+        const result = await db.deleteCar(carId);
 
         if (result.success) {
             res.json({
                 success: true,
-                message: 'Новость успешно удалена'
+                message: 'Автомобиль успешно удален'
             });
         } else {
             res.status(400).json({ 
                 success: false, 
-                error: result.error 
+                error: result.error || 'Ошибка при удалении автомобиля' 
             });
         }
 
     } catch (error) {
-        console.error('Ошибка удаления новости:', error);
+        console.error('Ошибка удаления автомобиля:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 
@@ -937,6 +780,287 @@ app.delete('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) =>
     }
 });
 
+// ----- УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ (АДМИН) -----
+
+// Получить всех пользователей
+app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const users = await db.getAllUsers();
+        
+        res.json({
+            success: true,
+            users: users.map(u => ({
+                id: u.ID,
+                name: u.Name,
+                email: u.Email,
+                phone: u.Phone || 'Не указан',
+                role: u.Role_Name || 'Клиент',
+                role_id: u.Role_ID
+            }))
+        });
+    } catch (error) {
+        console.error('Ошибка получения пользователей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Получить пользователя по ID
+app.get('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const user = await db.findUserById(parseInt(req.params.id));
+        
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+        
+        res.json({
+            success: true,
+            user: {
+                id: user.ID,
+                name: user.Name,
+                email: user.Email,
+                phone: user.Phone || '',
+                role: user.Role_Name || 'Клиент',
+                role_id: user.Role_ID
+            }
+        });
+    } catch (error) {
+        console.error('Ошибка получения пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Создать нового пользователя (админом)
+app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const { name, email, password, phone, role_id = 2 } = req.body;
+
+        // Валидация
+        if (!name || !email || !password) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Имя, email и пароль обязательны' 
+            });
+        }
+
+        // Проверка существования пользователя
+        const existingUser = await db.findUserByEmail(email);
+        if (existingUser) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Пользователь с таким email уже существует' 
+            });
+        }
+
+        // Создание пользователя
+        const result = await db.addUser(name, email, password, phone, role_id);
+        
+        if (!result.success) {
+            return res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+        // Получаем созданного пользователя
+        const newUser = await db.findUserById(result.id);
+        
+        res.status(201).json({
+            success: true,
+            user: {
+                id: newUser.ID,
+                name: newUser.Name,
+                email: newUser.Email,
+                phone: newUser.Phone || '',
+                role: newUser.Role_Name || 'Клиент',
+                role_id: newUser.Role_ID
+            }
+        });
+
+    } catch (error) {
+        console.error('Ошибка создания пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Обновить пользователя
+app.put('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { name, email, phone, password, role_id } = req.body;
+
+        // Проверяем существование пользователя
+        const existingUser = await db.findUserById(userId);
+        if (!existingUser) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+
+        // Проверяем email на уникальность, если он изменился
+        if (email && email !== existingUser.Email) {
+            const userWithEmail = await db.findUserByEmail(email);
+            if (userWithEmail && userWithEmail.ID !== userId) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Пользователь с таким email уже существует' 
+                });
+            }
+        }
+
+        // Обновляем пользователя
+        const result = await db.updateUser(userId, {
+            name: name || existingUser.Name,
+            email: email || existingUser.Email,
+            phone: phone !== undefined ? phone : existingUser.Phone,
+            password: password || null,
+            role_id: role_id || existingUser.Role_ID
+        });
+
+        if (!result.success) {
+            return res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+        // Получаем обновленного пользователя
+        const updatedUser = await db.findUserById(userId);
+        
+        res.json({
+            success: true,
+            user: {
+                id: updatedUser.ID,
+                name: updatedUser.Name,
+                email: updatedUser.Email,
+                phone: updatedUser.Phone || '',
+                role: updatedUser.Role_Name || 'Клиент',
+                role_id: updatedUser.Role_ID
+            }
+        });
+
+    } catch (error) {
+        console.error('Ошибка обновления пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Удалить пользователя
+app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const currentUser = req.user;
+
+        // Нельзя удалить самого себя
+        if (userId === currentUser.ID) {
+            return res.status(400).json({ 
+                success: false, 
+                error: 'Нельзя удалить самого себя' 
+            });
+        }
+
+        // Проверяем существование пользователя
+        const existingUser = await db.findUserById(userId);
+        if (!existingUser) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Пользователь не найден' 
+            });
+        }
+
+        // Удаляем пользователя
+        const result = await db.deleteUser(userId);
+        
+        if (!result.success) {
+            return res.status(400).json({ 
+                success: false, 
+                error: result.error 
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Пользователь успешно удален'
+        });
+
+    } catch (error) {
+        console.error('Ошибка удаления пользователя:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Получить все роли
+app.get('/api/admin/roles', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const roles = await db.getAllRoles();
+        
+        res.json({
+            success: true,
+            roles: roles.map(r => ({
+                id: r.ID,
+                name: r.Name
+            }))
+        });
+    } catch (error) {
+        console.error('Ошибка получения ролей:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// ----- УПРАВЛЕНИЕ НОВОСТЯМИ (АДМИН) -----
+
+// Получить все новости для админки
+app.get('/api/admin/news', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const news = await db.getAllNews();
+        
+        res.json({
+            success: true,
+            news: news.map(n => ({
+                id: n.ID,
+                title: n.Title,
+                description: n.Description,
+                type: n.Type,
+                author_name: n.Author_Name,
+                car_id: n.Car_ID,
+                car_brand: n.Car_Brand,
+                car_model: n.Car_Model,
+                image_url: n.Image_url,
+                created_at: n.Created_At
+            }))
+        });
+    } catch (error) {
+        console.error('Ошибка получения новостей для админки:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Получить новость по ID (для админки)
 app.get('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
         const news = await db.getNewsById(parseInt(req.params.id));
@@ -972,113 +1096,69 @@ app.get('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
-
-
-// Получить все роли
-app.get('/api/admin/roles', requireAuth, requireAdmin, async (req, res) => {
+// Создать новую новость (с поддержкой base64)
+app.post('/api/admin/news', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const roles = await db.getAllRoles();
-        
-        res.json({
-            success: true,
-            roles: roles.map(r => ({
-                id: r.ID,
-                name: r.Name
-            }))
-        });
-    } catch (error) {
-        console.error('Ошибка получения ролей:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-app.get('/api/admin/cars', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const cars = await db.getAllCars();
-        
-        res.json({
-            success: true,
-            cars: cars.map(car => ({
-                id: car.ID,
-                brand: car.Brand,
-                model: car.Model,
-                year: car.Year,
-                price: car.Price,
-                mileage: car.Mileage,
-                engineSize: car.EngineSize,
-                horsepower: car.Horsepower,
-                transmission: car.Transmission,
-                fuel: car.Fuel,
-                body: car.Body,
-                color: car.Color,
-                description: car.Description,
-                status: car.Status,
-                image_url: car.Image_url || 'https://via.placeholder.com/300x200?text=Автомобиль',
-            }))
-        });
-    } catch (error) {
-        console.error('Ошибка получения автомобилей:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
-
-// Создать новый автомобиль
-app.post('/api/admin/cars', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const {
-            brand, model, year, price, mileage, engineSize,
-            horsepower, transmission, fuel, body, color,
-            description, status, image_url
-        } = req.body;
+        const { title, description, type, car_id, image_url } = req.body;
 
         // Валидация
-        if (!brand || !model || !year || !price) {
+        if (!title || !description || !type) {
             return res.status(400).json({ 
                 success: false, 
-                error: 'Заполните обязательные поля' 
+                error: 'Заполните все обязательные поля (заголовок, описание, тип)' 
             });
         }
 
-        const carData = {
-            brand,
-            model,
-            year: parseInt(year),
-            price: parseFloat(price),
-            mileage: mileage ? parseInt(mileage) : 0,
-            engineSize: engineSize || null,
-            horsepower: horsepower ? parseInt(horsepower) : null,
-            transmission: transmission || 'Автомат',
-            fuel: fuel || 'Бензин',
-            body: body || 'Седан',
-            color: color || 'Черный',
-            description: description || '',
-            status: status || 'new',
-            image_url: image_url || ''
+        // Проверка валидности base64 изображения (если предоставлено)
+        if (image_url && !image_url.startsWith('data:image')) {
+            try {
+                new URL(image_url);
+            } catch (e) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Невалидный формат изображения. Используйте base64 или корректный URL' 
+                });
+            }
+        }
+
+        const newsData = {
+            title,
+            description,
+            type,
+            userId: req.user.ID,
+            carId: car_id || null,
+            image_url: image_url || 'https://via.placeholder.com/600x400?text=Новости'
         };
 
-        const result = await db.createCar(carData);
+        const result = await db.addNews(newsData);
 
         if (result.success) {
+            const news = await db.getNewsById(result.id);
+            
             res.status(201).json({
                 success: true,
-                message: 'Автомобиль успешно добавлен',
-                carId: result.id
+                message: 'Новость успешно создана',
+                news: {
+                    id: news.ID,
+                    title: news.Title,
+                    description: news.Description,
+                    type: news.Type,
+                    author_name: req.user.Name,
+                    car_brand: news.Car_Brand,
+                    car_model: news.Car_Model,
+                    image_url: news.Image_url,
+                    created_at: news.Created_At
+                }
             });
         } else {
             res.status(400).json({ 
                 success: false, 
-                error: result.error 
+                error: result.error || 'Ошибка при создании новости' 
             });
         }
 
     } catch (error) {
-        console.error('Ошибка создания автомобиля:', error);
+        console.error('Ошибка создания новости:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 
@@ -1086,58 +1166,108 @@ app.post('/api/admin/cars', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
-// Обновить автомобиль
-app.put('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) => {
+// Обновить новость (с поддержкой base64)
+app.put('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
     try {
-        const carId = parseInt(req.params.id);
-        const {
-            brand, model, year, price, mileage, engineSize,
-            horsepower, transmission, fuel, body, color,
-            description, status, image_url
-        } = req.body;
+        const newsId = parseInt(req.params.id);
+        const { title, description, type, car_id, image_url } = req.body;
 
-        // Проверяем существование автомобиля
-        const existingCar = await db.getCarById(carId);
-        if (!existingCar) {
+        // Проверяем существование новости
+        const existingNews = await db.getNewsById(newsId);
+        if (!existingNews) {
             return res.status(404).json({ 
                 success: false, 
-                error: 'Автомобиль не найден' 
+                error: 'Новость не найдена' 
             });
         }
 
-        const carData = {
-            brand: brand || existingCar.Brand,
-            model: model || existingCar.Model,
-            year: year ? parseInt(year) : existingCar.Year,
-            price: price ? parseFloat(price) : existingCar.Price,
-            mileage: mileage !== undefined ? parseInt(mileage) : existingCar.Mileage,
-            engineSize: engineSize || existingCar.EngineSize,
-            horsepower: horsepower ? parseInt(horsepower) : existingCar.Horsepower,
-            transmission: transmission || existingCar.Transmission,
-            fuel: fuel || existingCar.Fuel,
-            body: body || existingCar.Body,
-            color: color || existingCar.Color,
-            description: description || existingCar.Description,
-            status: status || existingCar.Status,
-            image_url: image_url || existingCar.Image_url
-        };
+        // Проверка валидности base64 изображения (если предоставлено)
+        if (image_url && !image_url.startsWith('data:image')) {
+            try {
+                new URL(image_url);
+            } catch (e) {
+                return res.status(400).json({ 
+                    success: false, 
+                    error: 'Невалидный формат изображения. Используйте base64 или корректный URL' 
+                });
+            }
+        }
 
-        const result = await db.updateCar(carId, carData);
+        // Обновляем новость
+        const result = await db.updateNews(newsId, {
+            title: title || existingNews.Title,
+            description: description || existingNews.Description,
+            type: type || existingNews.Type,
+            carId: car_id !== undefined ? car_id : existingNews.Car_ID,
+            image_url: image_url !== undefined ? image_url : existingNews.Image_url,
+            userId: req.user.ID
+        });
+
+        if (result.success) {
+            const updatedNews = await db.getNewsById(newsId);
+            
+            res.json({
+                success: true,
+                message: 'Новость успешно обновлена',
+                news: {
+                    id: updatedNews.ID,
+                    title: updatedNews.Title,
+                    description: updatedNews.Description,
+                    type: updatedNews.Type,
+                    author_name: req.user.Name,
+                    car_brand: updatedNews.Car_Brand,
+                    car_model: updatedNews.Car_Model,
+                    image_url: updatedNews.Image_url,
+                    created_at: updatedNews.Created_At
+                }
+            });
+        } else {
+            res.status(400).json({ 
+                success: false, 
+                error: result.error || 'Ошибка при обновлении новости' 
+            });
+        }
+
+    } catch (error) {
+        console.error('Ошибка обновления новости:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Ошибка сервера' 
+        });
+    }
+});
+
+// Удалить новость
+app.delete('/api/admin/news/:id', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        const newsId = parseInt(req.params.id);
+
+        // Проверяем существование новости
+        const existingNews = await db.getNewsById(newsId);
+        if (!existingNews) {
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Новость не найдена' 
+            });
+        }
+
+        // Удаляем новость
+        const result = await db.deleteNews(newsId);
 
         if (result.success) {
             res.json({
                 success: true,
-                message: 'Автомобиль успешно обновлен'
+                message: 'Новость успешно удалена'
             });
         } else {
             res.status(400).json({ 
                 success: false, 
-                error: result.error 
+                error: result.error || 'Ошибка при удалении новости' 
             });
         }
 
     } catch (error) {
-        console.error('Ошибка обновления автомобиля:', error);
+        console.error('Ошибка удаления новости:', error);
         res.status(500).json({ 
             success: false, 
             error: 'Ошибка сервера' 
@@ -1145,42 +1275,7 @@ app.put('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 });
 
-// Удалить автомобиль
-app.delete('/api/admin/cars/:id', requireAuth, requireAdmin, async (req, res) => {
-    try {
-        const carId = parseInt(req.params.id);
-
-        // Проверяем существование автомобиля
-        const existingCar = await db.getCarById(carId);
-        if (!existingCar) {
-            return res.status(404).json({ 
-                success: false, 
-                error: 'Автомобиль не найден' 
-            });
-        }
-
-        const result = await db.deleteCar(carId);
-
-        if (result.success) {
-            res.json({
-                success: true,
-                message: 'Автомобиль успешно удален'
-            });
-        } else {
-            res.status(400).json({ 
-                success: false, 
-                error: result.error 
-            });
-        }
-
-    } catch (error) {
-        console.error('Ошибка удаления автомобиля:', error);
-        res.status(500).json({ 
-            success: false, 
-            error: 'Ошибка сервера' 
-        });
-    }
-});
+// ==================== ДЕБАГ ЭНДПОИНТЫ ====================
 
 app.get('/api/debug/cars', async (req, res) => {
     try {
@@ -1218,15 +1313,16 @@ app.get('/api/test-cars', async (req, res) => {
     }
 });
 
-
+// ==================== ГЛАВНАЯ СТРАНИЦА ====================
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ==================== ЗАПУСК СЕРВЕРА ====================
+
 app.listen(PORT, () => {
     console.log('=======================================');
     console.log(`Сервер запущен на http://localhost:${PORT}`);
     console.log('=======================================');
-
 });

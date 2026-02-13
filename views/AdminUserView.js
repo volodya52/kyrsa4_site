@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function () {
     // Элементы страницы
     const adminContent = document.getElementById('adminContent');
@@ -16,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveUserBtn = document.getElementById('saveUserBtn');
     const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     const userForm = document.getElementById('userForm');
+    const roleSelect = document.getElementById('userRole');
 
     // Initialize Controllers and Models
     const userController = new UserController();
@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Переменные для хранения состояния
     let currentUser = null;
     let userToDelete = null;
+    let rolesList = []; // Здесь будут храниться загруженные роли
 
     // Проверяем, является ли пользователь администратором через модель
     function checkAdminAccess() {
@@ -77,7 +78,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         <th>Email</th>
                         <th>Телефон</th>
                         <th>Роль</th>
-                        <th>Дата регистрации</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -90,14 +90,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Форматируем дату с проверкой
-            let formattedDate = 'Не указана';
-            if (user.created_at) {
-                try {
-                    formattedDate = new Date(user.created_at).toLocaleDateString('ru-RU');
-                } catch (e) {
-                    console.warn('Ошибка форматирования даты:', e);
-                }
+            // Определяем роль для отображения
+            let roleName = 'Клиент';
+            let roleClass = 'role-user';
+            
+            if (user.role === 'admin' || user.role === 'Администратор' || user.role_id === 1) {
+                roleName = 'Администратор';
+                roleClass = 'role-admin';
+            } else if (user.role === 'client' || user.role === 'Клиент' || user.role_id === 2) {
+                roleName = 'Клиент';
+                roleClass = 'role-user';
             }
 
             tableHTML += `
@@ -107,11 +109,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${user.email || 'Не указан'}</td>
                     <td>${user.phone || 'Не указан'}</td>
                     <td>
-                        <span class="role-badge ${(user.role === 'admin' || user.role === 'Администратор') ? 'role-admin' : 'role-user'}">
-                            ${user.role === 'admin' || user.role === 'Администратор' ? 'Админ' : 'Пользователь'}
+                        <span class="role-badge ${roleClass}">
+                            ${roleName}
                         </span>
                     </td>
-                    <td>${formattedDate}</td>
                     <td>
                         <div class="user-actions">
                             <button class="btn btn-warning btn-icon" onclick="editUser(${user.id || 0})">
@@ -134,6 +135,68 @@ document.addEventListener('DOMContentLoaded', function () {
         usersTableContainer.innerHTML = tableHTML;
     }
 
+    // ЗАГРУЖАЕМ РОЛИ ТОЛЬКО ОДИН РАЗ
+    async function loadRolesOnce() {
+        if (rolesList.length > 0) {
+            console.log('Роли уже загружены, используем кэш');
+            return rolesList;
+        }
+        
+        try {
+            console.log('Загрузка ролей с сервера...');
+            const roles = await userController.getRoles();
+            
+            if (roles && Array.isArray(roles) && roles.length > 0) {
+                rolesList = roles;
+            } else {
+                // Запасной вариант
+                rolesList = [
+                    { id: 1, name: 'Администратор' },
+                    { id: 2, name: 'Клиент' }
+                ];
+            }
+            
+            console.log('Роли загружены:', rolesList);
+            return rolesList;
+        } catch (error) {
+            console.error('Ошибка загрузки ролей:', error);
+            // Запасной вариант
+            rolesList = [
+                { id: 1, name: 'Администратор' },
+                { id: 2, name: 'Клиент' }
+            ];
+            return rolesList;
+        }
+    }
+
+    // Заполняем выпадающий список ролей (использует кэш)
+    function populateRoleSelect(selectedRoleId = 2) {
+        const roleSelect = document.getElementById('userRole');
+        if (!roleSelect) return;
+
+        // Очищаем select
+        roleSelect.innerHTML = '';
+        
+        // Добавляем опции из кэша
+        rolesList.forEach(role => {
+            const option = document.createElement('option');
+            option.value = role.id;
+            option.textContent = role.name;
+            if (role.id == selectedRoleId) {
+                option.selected = true;
+            }
+            roleSelect.appendChild(option);
+        });
+        
+        console.log('Список ролей заполнен, выбрана роль:', selectedRoleId);
+    }
+
+    // ИНИЦИАЛИЗАЦИЯ SELECT С РОЛЯМИ (вызывается 1 раз)
+    async function initRoleSelect() {
+        await loadRolesOnce(); // Загружаем роли один раз
+        populateRoleSelect(2); // Устанавливаем "Клиент" по умолчанию
+    }
+
     // Открываем модальное окно для добавления пользователя
     async function openAddUserModal() {
         try {
@@ -141,26 +204,13 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('userModalTitle').textContent = 'Добавить пользователя';
             document.getElementById('passwordHint').style.display = 'inline';
             userForm.reset();
+            
+            // Сбрасываем ID пользователя
+            const userIdInput = document.getElementById('userId');
+            if (userIdInput) userIdInput.value = '';
 
-            // Загружаем и заполняем список ролей
-            const roles = await userController.getRoles();
-            const roleSelect = document.getElementById('userRole');
-
-            if (roles) {
-                roleSelect.innerHTML = '';
-                roles.forEach(role => {
-                    const option = document.createElement('option');
-                    option.value = role.id;
-                    option.textContent = role.name;
-                    roleSelect.appendChild(option);
-                });
-            } else {
-                // Запасной вариант
-                roleSelect.innerHTML = `
-                    <option value="2">Клиент</option>
-                    <option value="1">Администратор</option>
-                `;
-            }
+            // Просто заполняем select из уже загруженных ролей (БЕЗ ЗАГРУЗКИ)
+            populateRoleSelect(2); // Клиент по умолчанию
 
             userModal.style.display = 'flex';
         } catch (error) {
@@ -180,32 +230,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
             currentUser = user;
 
-            // Загружаем роли для select
-            const roles = await userController.getRoles();
-            const roleSelect = document.getElementById('userRole');
-
-            if (roles) {
-                roleSelect.innerHTML = '';
-                roles.forEach(role => {
-                    const option = document.createElement('option');
-                    option.value = role.id;
-                    option.textContent = role.name;
-                    if (user.role_id == role.id || user.role === role.name) {
-                        option.selected = true;
-                    }
-                    roleSelect.appendChild(option);
-                });
-            } else {
-                // Запасной вариант
-                roleSelect.innerHTML = `
-                    <option value="2" ${(user.role_id == 2 || user.role === 'Клиент') ? 'selected' : ''}>Клиент</option>
-                    <option value="1" ${(user.role_id == 1 || user.role === 'Администратор') ? 'selected' : ''}>Администратор</option>
-                `;
+            // Определяем ID роли
+            let roleId = 2; // По умолчанию Клиент
+            if (user.role_id) {
+                roleId = user.role_id;
+            } else if (user.role === 'admin' || user.role === 'Администратор') {
+                roleId = 1;
             }
+
+            // Заполняем select из уже загруженных ролей (БЕЗ ЗАГРУЗКИ)
+            populateRoleSelect(roleId);
 
             document.getElementById('userModalTitle').textContent = 'Редактировать пользователя';
             document.getElementById('passwordHint').style.display = 'inline';
-            document.getElementById('userId').value = user.id;
+            document.getElementById('userId').value = user.id || '';
             document.getElementById('userName').value = user.name || '';
             document.getElementById('userEmail').value = user.email || '';
             document.getElementById('userPhone').value = user.phone || '';
@@ -240,12 +278,23 @@ document.addEventListener('DOMContentLoaded', function () {
             userData.password = password;
         }
 
+        // Валидация
+        if (!userData.name || !userData.email) {
+            alert('Имя и Email обязательны для заполнения');
+            return;
+        }
+
+        if (!currentUser && !userData.password) {
+            alert('Пароль обязателен при создании нового пользователя');
+            return;
+        }
+
         try {
             const result = await userController.saveUser(userData, currentUser?.id || null);
 
             if (result.success) {
                 closeModal(userModal);
-                loadUsers();
+                await loadUsers();
                 showSuccessMessage(
                     currentUser ?
                         'Пользователь успешно обновлен!' :
@@ -262,12 +311,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Удаление пользователя
     async function deleteUser() {
+        if (!userToDelete) return;
+
         try {
             const result = await userController.deleteUser(userToDelete);
 
             if (result.success) {
                 closeModal(deleteModal);
-                loadUsers();
+                await loadUsers();
                 showSuccessMessage('Пользователь успешно удален!');
                 userToDelete = null;
             } else {
@@ -280,11 +331,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Вспомогательные функции
-    function openModal(modal) {
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-
     function closeModal(modal) {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
@@ -294,23 +340,40 @@ document.addEventListener('DOMContentLoaded', function () {
         const successMsg = document.createElement('div');
         successMsg.className = 'success-message';
         successMsg.textContent = message;
+        successMsg.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 10000;
+            animation: fadeInOut 3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
         document.body.appendChild(successMsg);
 
         setTimeout(() => {
-            successMsg.remove();
+            if (successMsg.parentNode) {
+                successMsg.remove();
+            }
         }, 3000);
     }
 
     // Инициализация
-    function initAdminPage() {
+    async function initAdminPage() {
         if (!checkAdminAccess()) {
             adminContent.style.display = 'none';
             accessDenied.style.display = 'block';
             return;
         }
 
+        // ИНИЦИАЛИЗИРУЕМ SELECT С РОЛЯМИ (ЗАГРУЗКА ТОЛЬКО 1 РАЗ)
+        await initRoleSelect();
+
         // Загружаем пользователей
-        loadUsers();
+        await loadUsers();
 
         // Назначаем обработчики событий
         addUserBtn.addEventListener('click', openAddUserModal);
@@ -321,8 +384,25 @@ document.addEventListener('DOMContentLoaded', function () {
         saveUserBtn.addEventListener('click', saveUser);
         confirmDeleteBtn.addEventListener('click', deleteUser);
 
+        // Закрытие модальных окон при клике вне их
+        window.addEventListener('click', (event) => {
+            if (event.target === userModal) {
+                closeModal(userModal);
+            }
+            if (event.target === deleteModal) {
+                closeModal(deleteModal);
+            }
+        });
 
-       
+        // Обработка нажатия Enter в форме
+        if (userForm) {
+            userForm.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    saveUserBtn.click();
+                }
+            });
+        }
     }
 
     initAdminPage();

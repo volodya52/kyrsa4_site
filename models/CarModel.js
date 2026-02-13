@@ -40,18 +40,37 @@ class CarModel {
             const url = carId ? `/api/admin/cars/${carId}` : '/api/admin/cars';
             const method = carId ? 'PUT' : 'POST';
 
+            // Преобразуем carData в формат, ожидаемый сервером
+            const serverCarData = {
+                brand: carData.brand,
+                model: carData.model,
+                year: carData.year,
+                price: carData.price,
+                mileage: carData.mileage || 0,
+                engineSize: carData.engine_size,
+                horsepower: carData.horsepower,
+                transmission: carData.transmission,
+                fuel: carData.fuel,
+                body: carData.body,
+                color: carData.color,
+                description: carData.description || '',
+                status: carData.status || 'new',
+                image_url: carData.image || '' // Используем base64 строку как URL
+            };
+
             const response = await fetch(url, {
                 method,
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(carData)
+                body: JSON.stringify(serverCarData)
             });
 
             const data = await response.json();
             return data;
         } catch (error) {
+            console.error('Error saving car:', error);
             return { success: false, error: 'Network error' };
         }
     }

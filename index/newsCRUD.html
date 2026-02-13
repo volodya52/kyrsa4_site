@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <title>Управление новостями</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -14,7 +16,7 @@
                 <div class="logo">
                     <span class="logo-text">АВТОСАЛОН</span>
                 </div>
-                
+
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="index.html">Главная</a></li>
                     <li><a href="cars.html">Автомобили</a></li>
@@ -29,7 +31,7 @@
                         <a href="users.html">Пользователи</a>
                     </li>
                     <li id="newsTabItem" style="display: none;">
-                        <a href="newsCRUD.html">Управление новостями</a> 
+                        <a href="newsCRUD.html">Управление новостями</a>
                     </li>
                     <li><a href="#" id="signinLink">Войти</a></li>
                 </ul>
@@ -46,7 +48,7 @@
             </div>
         </div>
 
-     
+
         <div class="table-container">
             <table class="users-table">
                 <thead>
@@ -59,7 +61,7 @@
                     </tr>
                 </thead>
                 <tbody id="newsTableBody">
-                    
+
                 </tbody>
             </table>
         </div>
@@ -68,7 +70,7 @@
             <div class="spinner"></div>
             <p>Загружаем новости...</p>
         </div>
-        
+
         <div class="no-data" id="noNews" style="display: none;">
             <h3>Новостей нет</h3>
             <p>Добавьте первую новость, нажав кнопку "Добавить новость"</p>
@@ -98,29 +100,30 @@
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="newsDescription">Описание *</label>
                         <textarea id="newsDescription" rows="4" required></textarea>
                     </div>
-                    
+
                     <div class="form-row">
-                        <div class="form-group">
-                            <label for="newsCarId">ID автомобиля (опционально)</label>
-                            <input type="number" id="newsCarId" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label for="newsImageUrl">URL изображения</label>
-                            <input type="text" id="newsImageUrl">
+                        <div class="form-group file-upload-group">
+                            <label for="newsImageFile">Изображение новости</label>
+                            <div class="file-upload-container">
+                                <input type="file" id="newsImageFile" accept="image/*" class="file-input">
+                                <div class="file-upload-preview" id="newsImagePreview">
+                                    <img id="newsPreviewImage" src="#" alt="Предпросмотр"
+                                        style="display: none; max-width: 100%; max-height: 150px; border-radius: 4px;">
+                                    <div id="newsNoImageText" class="no-image-text">Фото не выбрано</div>
+                                </div>
+                                <input type="hidden" id="newsImageUrl" name="newsImageUrl">
+                                <small class="form-text">Выберите изображение для новости (JPG, PNG, GIF, до
+                                    5MB)</small>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>Автомобиль</label>
-                        <div id="carInfo" class="car-info-summary" style="display: none;">
-                        </div>
-                    </div>
-                    
+
+
                     <input type="hidden" id="newsId">
                 </form>
             </div>
@@ -156,7 +159,7 @@
                         <li>Екатеринбург, ул. Поканезнаю, 22</li>
                     </ul>
                 </div>
-            </div>          
+            </div>
         </div>
     </footer>
 
@@ -168,4 +171,5 @@
     <script src="../views/NewsAdminView.js"></script>
     <script src="../views/SignInView.js"></script>
 </body>
+
 </html>

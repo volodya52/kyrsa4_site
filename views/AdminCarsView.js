@@ -210,6 +210,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('carModalTitle').textContent = 'Добавить автомобиль';
         carForm.reset();
 
+        // Сбрасываем загрузку файла
+        resetFileUpload();
+
         // Устанавливаем значения по умолчанию
         const currentYear = new Date().getFullYear();
         document.getElementById('carYear').value = currentYear;
@@ -243,15 +246,29 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('carYear').value = car.year || new Date().getFullYear();
             document.getElementById('carPrice').value = car.price || '';
             document.getElementById('carMileage').value = car.mileage || 0;
-            document.getElementById('carEngine').value = car.engine_size || car.engineSize || car.engine || ''; 
+            document.getElementById('carEngine').value = car.engine_size || car.engineSize || car.engine || '';
             document.getElementById('carHorsepower').value = car.horsepower || '';
             document.getElementById('carTransmission').value = car.transmission || 'Автомат';
             document.getElementById('carFuel').value = car.fuel || 'Бензин';
             document.getElementById('carBody').value = car.body || 'Седан';
             document.getElementById('carColor').value = car.color || '';
             document.getElementById('carStatus').value = car.status || 'new';
-           
-            document.getElementById('carImage').value = car.image_url || car.image || '';
+
+            // Загружаем существующее изображение
+            const imageUrl = car.image_url || car.image || '';
+            const hiddenInput = document.getElementById('carImage');
+            const previewImage = document.getElementById('previewImage');
+            const noImageText = document.getElementById('noImageText');
+
+            if (imageUrl) {
+                hiddenInput.value = imageUrl;
+                previewImage.src = imageUrl;
+                previewImage.style.display = 'block';
+                if (noImageText) noImageText.style.display = 'none';
+            } else {
+                resetFileUpload();
+            }
+
             document.getElementById('carDescription').value = car.description || '';
 
             carModal.style.display = 'flex';
@@ -279,14 +296,14 @@ document.addEventListener('DOMContentLoaded', function () {
             year: parseInt(document.getElementById('carYear').value),
             price: parseInt(document.getElementById('carPrice').value),
             mileage: parseInt(document.getElementById('carMileage').value) || 0,
-            engine_size: document.getElementById('carEngine').value.trim(), 
+            engine_size: document.getElementById('carEngine').value.trim(),
             horsepower: parseInt(document.getElementById('carHorsepower').value) || 0,
             transmission: document.getElementById('carTransmission').value,
             fuel: document.getElementById('carFuel').value,
             body: document.getElementById('carBody').value,
             color: document.getElementById('carColor').value.trim(),
             status: document.getElementById('carStatus').value,
-            image_url: document.getElementById('carImage').value.trim(), 
+            image: document.getElementById('carImage').value.trim(), // Используем поле image вместо image_url
             description: document.getElementById('carDescription').value.trim()
         };
 
@@ -296,24 +313,15 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-
         if (carData.price < 0) {
             alert('Цена не может быть отрицательной');
             return;
-        }
-
-
-
-        // Если нет изображения, используем заглушку
-        if (!carData.image_url) {
-            carData.image_url = 'https://via.placeholder.com/400x300?text=Автомобиль';
         }
 
         try {
             let result;
             const carId = currentCar ? (currentCar.id || currentCar._id) : null;
 
-            
             if (carId) {
                 // Обновление существующего автомобиля
                 result = await carController.saveCar(carData, carId);
@@ -322,17 +330,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 result = await carController.saveCar(carData);
             }
 
-           
-
             if (result && result.success !== false) {
                 closeModal(carModal);
+                resetFileUpload(); // Сбрасываем загрузку файла
                 loadCars();
                 showSuccessMessage(
                     carId ?
                         'Автомобиль успешно обновлен!' :
                         'Автомобиль успешно добавлен!'
                 );
-
                 currentCar = null;
             } else {
                 throw new Error(result?.error || 'Ошибка сохранения автомобиля');
@@ -420,15 +426,22 @@ document.addEventListener('DOMContentLoaded', function () {
         addCarBtn.addEventListener('click', openAddCarModal);
         closeCarModal.addEventListener('click', () => closeModal(carModal));
         closeDeleteCarModal.addEventListener('click', () => closeModal(deleteCarModal));
-        cancelCarBtn.addEventListener('click', () => closeModal(carModal));
+        cancelCarBtn.addEventListener('click', () => {
+            closeModal(carModal);
+            resetFileUpload(); // Добавляем сброс
+        });
         cancelDeleteCarBtn.addEventListener('click', () => closeModal(deleteCarModal));
         saveCarBtn.addEventListener('click', saveCar);
         confirmDeleteCarBtn.addEventListener('click', deleteCar);
+
+        // Настраиваем загрузку файлов
+        setupFileUpload();
 
         // Закрытие модальных окон при клике вне их
         window.addEventListener('click', (event) => {
             if (event.target === carModal) {
                 closeModal(carModal);
+                resetFileUpload(); // Добавляем сброс
             }
             if (event.target === deleteCarModal) {
                 closeModal(deleteCarModal);
@@ -442,6 +455,71 @@ document.addEventListener('DOMContentLoaded', function () {
                 saveCarBtn.click();
             }
         });
+    }
+
+    function setupFileUpload() {
+        const fileInput = document.getElementById('carImageFile');
+        const previewImage = document.getElementById('previewImage');
+        const noImageText = document.getElementById('noImageText');
+        const hiddenInput = document.getElementById('carImage');
+
+        if (!fileInput) return;
+
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+
+            if (file) {
+                // Проверка размера файла (максимум 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Файл слишком большой. Максимальный размер 5MB');
+                    fileInput.value = '';
+                    return;
+                }
+
+                // Проверка типа файла
+                if (!file.type.startsWith('image/')) {
+                    alert('Пожалуйста, выберите изображение');
+                    fileInput.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    // Показываем предпросмотр
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                    if (noImageText) noImageText.style.display = 'none';
+
+                    // Сохраняем base64 строку в скрытое поле
+                    hiddenInput.value = e.target.result;
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                // Очищаем предпросмотр
+                previewImage.style.display = 'none';
+                previewImage.src = '#';
+                if (noImageText) noImageText.style.display = 'block';
+                hiddenInput.value = '';
+            }
+        });
+    }
+
+    // Добавьте функцию для очистки загрузки файла
+    function resetFileUpload() {
+        const fileInput = document.getElementById('carImageFile');
+        const previewImage = document.getElementById('previewImage');
+        const noImageText = document.getElementById('noImageText');
+        const hiddenInput = document.getElementById('carImage');
+
+        if (fileInput) fileInput.value = '';
+        if (previewImage) {
+            previewImage.style.display = 'none';
+            previewImage.src = '#';
+        }
+        if (noImageText) noImageText.style.display = 'block';
+        if (hiddenInput) hiddenInput.value = '';
     }
 
     // Запуск инициализации

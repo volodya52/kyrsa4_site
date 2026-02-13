@@ -1,7 +1,7 @@
 
 class SignInView {
     constructor() {
-        console.log('SignInView initializing...');
+       
         
         // Initialize Controllers and Models
         this.authController = new AuthController();

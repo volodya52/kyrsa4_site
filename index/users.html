@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Управление пользователями</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -27,7 +29,7 @@
                         <a href="users.html">Пользователи</a>
                     </li>
                     <li id="newsTabItem" style="display: none;">
-                        <a href="newsCRUD.html">Управление новостями</a> 
+                        <a href="newsCRUD.html">Управление новостями</a>
                     </li>
                     <li><a href="#" id="signinLink">Войти</a></li>
                 </ul>
@@ -78,16 +80,17 @@
                         <input type="tel" id="userPhone">
                     </div>
                     <div class="form-group">
-                        <label for="userPassword">Пароль <span id="passwordHint">(оставьте пустым, чтобы не менять)</span></label>
+                        <label for="userPassword">Пароль <span id="passwordHint">(оставьте пустым, чтобы не
+                                менять)</span></label>
                         <input type="password" id="userPassword">
                     </div>
                     <div class="form-group">
-    <label for="userRole">Роль</label>
-    <select id="userRole" name="userRole" required>
-        <!-- Опции будут заполнены динамически -->
-    </select>
-    <div class="error-message" id="userRoleError"></div>
-</div>
+                        <label for="userRole">Роль</label>
+                        <select id="userRole" name="userRole" required>
+                            <!-- Опции будут заполнены динамически -->
+                        </select>
+                        <div class="error-message" id="userRoleError"></div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -221,4 +224,5 @@
     <script src="../views/AdminUserView.js"></script>
     <script src="../views/SignInView.js"></script>
 </body>
+
 </html>

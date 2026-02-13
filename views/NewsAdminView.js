@@ -1,7 +1,5 @@
-
 class NewsAdminView {
     constructor() {
-       
         // Сохраняем элементы
         this.newsTableBody = document.getElementById('newsTableBody');
         this.loading = document.getElementById('loading');
@@ -11,7 +9,7 @@ class NewsAdminView {
         // Кнопки
         this.addNewsBtn = document.getElementById('addNewsBtn');
         
-        // Модальные окна
+        // Модальные окна - сразу ищем в DOM
         this.newsFormModal = document.getElementById('newsFormModal');
         
         // Initialize Models and Controllers
@@ -100,48 +98,158 @@ class NewsAdminView {
         
         // Кнопка добавления новости
         if (this.addNewsBtn) {
-            this.addNewsBtn.addEventListener('click', () => {
+            // Удаляем старые обработчики
+            this.addNewsBtn.removeEventListener('click', this.addNewsHandler);
+            // Создаем новый обработчик
+            this.addNewsHandler = () => {
                 console.log('Add news button clicked');
                 this.openNewsForm();
-            });
+            };
+            this.addNewsBtn.addEventListener('click', this.addNewsHandler);
         }
         
-        // Кнопки в модальном окне (если они есть)
-        this.setupModalEventListeners();
+        // Кнопки в модальном окне (если модальное окно уже есть)
+        if (this.newsFormModal) {
+            this.setupModalEventListeners();
+        }
     }
     
     setupModalEventListeners() {
+        console.log('Setting up modal event listeners...');
+        
         const saveBtn = document.getElementById('saveNewsBtn');
         const cancelBtn = document.getElementById('cancelNewsBtn');
         const closeBtn = document.getElementById('closeNewsFormModal');
         
         if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
+            // Удаляем старые обработчики
+            saveBtn.removeEventListener('click', this.saveNewsHandler);
+            // Создаем новый обработчик
+            this.saveNewsHandler = () => {
                 console.log('Save news button clicked');
                 this.saveNews();
-            });
+            };
+            saveBtn.addEventListener('click', this.saveNewsHandler);
         }
         
         if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => {
+            cancelBtn.removeEventListener('click', this.cancelNewsHandler);
+            this.cancelNewsHandler = () => {
                 console.log('Cancel button clicked');
                 this.closeNewsForm();
-            });
+            };
+            cancelBtn.addEventListener('click', this.cancelNewsHandler);
         }
         
         if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
+            closeBtn.removeEventListener('click', this.closeNewsHandler);
+            this.closeNewsHandler = () => {
                 this.closeNewsForm();
-            });
+            };
+            closeBtn.addEventListener('click', this.closeNewsHandler);
         }
         
         // Закрытие при клике вне модального окна
         if (this.newsFormModal) {
-            this.newsFormModal.addEventListener('click', (e) => {
+            this.newsFormModal.removeEventListener('click', this.overlayClickHandler);
+            this.overlayClickHandler = (e) => {
                 if (e.target === this.newsFormModal) {
                     this.closeNewsForm();
                 }
-            });
+            };
+            this.newsFormModal.addEventListener('click', this.overlayClickHandler);
+        }
+
+        // Настройка загрузки файла
+        this.setupFileUpload();
+    }
+
+    // Настройка загрузки файлов
+    setupFileUpload() {
+        const fileInput = document.getElementById('newsImageFile');
+        const previewImage = document.getElementById('newsPreviewImage');
+        const noImageText = document.getElementById('newsNoImageText');
+        const hiddenInput = document.getElementById('newsImageUrl');
+
+        if (!fileInput) return;
+
+        // Удаляем старый обработчик, если есть
+        if (this.fileUploadHandler) {
+            fileInput.removeEventListener('change', this.fileUploadHandler);
+        }
+        
+        // Создаем новый обработчик
+        this.fileUploadHandler = (event) => {
+            const file = event.target.files[0];
+            
+            if (file) {
+                // Проверка размера файла (максимум 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Файл слишком большой. Максимальный размер 5MB');
+                    fileInput.value = '';
+                    return;
+                }
+
+                // Проверка типа файла
+                if (!file.type.startsWith('image/')) {
+                    alert('Пожалуйста, выберите изображение');
+                    fileInput.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    // Показываем предпросмотр
+                    if (previewImage) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    }
+                    if (noImageText) noImageText.style.display = 'none';
+                    
+                    // Сохраняем base64 строку в скрытое поле
+                    if (hiddenInput) hiddenInput.value = e.target.result;
+                };
+                
+                reader.readAsDataURL(file);
+            } else {
+                // Очищаем предпросмотр
+                this.resetFileUpload();
+            }
+        };
+
+        fileInput.addEventListener('change', this.fileUploadHandler);
+    }
+
+    // Сброс загрузки файла
+    resetFileUpload() {
+        const fileInput = document.getElementById('newsImageFile');
+        const previewImage = document.getElementById('newsPreviewImage');
+        const noImageText = document.getElementById('newsNoImageText');
+        const hiddenInput = document.getElementById('newsImageUrl');
+
+        if (fileInput) fileInput.value = '';
+        if (previewImage) {
+            previewImage.style.display = 'none';
+            previewImage.src = '#';
+        }
+        if (noImageText) noImageText.style.display = 'block';
+        if (hiddenInput) hiddenInput.value = '';
+    }
+
+    // Загрузка существующего изображения в предпросмотр
+    loadExistingImage(imageUrl) {
+        const previewImage = document.getElementById('newsPreviewImage');
+        const noImageText = document.getElementById('newsNoImageText');
+        const hiddenInput = document.getElementById('newsImageUrl');
+
+        if (imageUrl && previewImage) {
+            previewImage.src = imageUrl;
+            previewImage.style.display = 'block';
+            if (noImageText) noImageText.style.display = 'none';
+            if (hiddenInput) hiddenInput.value = imageUrl;
+        } else {
+            this.resetFileUpload();
         }
     }
     
@@ -187,19 +295,15 @@ class NewsAdminView {
         const typeClass = news.type === 'promotions' ? 'role-admin' : 'role-user';
         const typeLabel = typeLabels[news.type] || news.type;
         
-        const carInfo = news.car_brand && news.car_model 
-            ? `${news.car_brand} ${news.car_model}`
-            : '—';
-        
         // Обрезаем заголовок для отображения
-        const shortTitle = news.title.length > 40 
+        const shortTitle = news.title && news.title.length > 40 
             ? news.title.substring(0, 40) + '...' 
-            : news.title;
+            : news.title || 'Без заголовка';
         
         return `
             <tr>
-                <td>${news.id}</td>
-                <td title="${news.title}">
+                <td>${news.id || ''}</td>
+                <td title="${news.title || ''}">
                     <strong>${shortTitle}</strong>
                 </td>
                 <td>
@@ -229,42 +333,58 @@ class NewsAdminView {
     addTableEventListeners() {
         // Кнопки редактирования
         document.querySelectorAll('.edit-news-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.removeEventListener('click', this.editNewsHandler);
+            this.editNewsHandler = (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 const newsId = btn.dataset.id;
                 console.log('Edit button clicked for news:', newsId);
                 this.editNews(newsId);
-            });
+            };
+            btn.addEventListener('click', this.editNewsHandler);
         });
         
         // Кнопки удаления
         document.querySelectorAll('.delete-news-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.removeEventListener('click', this.deleteNewsHandler);
+            this.deleteNewsHandler = (e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 const newsId = btn.dataset.id;
                 console.log('Delete button clicked for news:', newsId);
                 this.deleteNews(newsId);
-            });
+            };
+            btn.addEventListener('click', this.deleteNewsHandler);
         });
     }
     
     openNewsForm(newsId = null) {
         console.log('Opening news form for ID:', newsId);
         
-        // Создаем модальное окно если его нет
-        if (!this.newsFormModal || this.newsFormModal.style.display === 'none') {
+        // Если модальное окно не существует в DOM, создаем его
+        if (!this.newsFormModal) {
+            this.newsFormModal = document.getElementById('newsFormModal');
+        }
+        
+        if (!this.newsFormModal) {
             this.createNewsFormModal();
+        } else {
+            // Переинициализируем обработчики событий
+            this.setupModalEventListeners();
         }
         
         this.currentNewsId = newsId;
         
+        const modalTitle = document.getElementById('modalNewsFormTitle');
+        if (modalTitle) {
+            modalTitle.textContent = newsId ? 'Редактировать новость' : 'Добавить новость';
+        }
+        
         if (newsId) {
             // Редактирование
-            document.getElementById('modalNewsFormTitle').textContent = 'Редактировать новость';
             this.fillNewsForm(newsId);
         } else {
             // Добавление
-            document.getElementById('modalNewsFormTitle').textContent = 'Добавить новость';
             this.clearNewsForm();
         }
         
@@ -272,10 +392,7 @@ class NewsAdminView {
     }
     
     createNewsFormModal() {
-        // Если модальное окно уже есть в HTML, не создаем заново
-        if (document.getElementById('newsFormModal')) {
-            return;
-        }
+        console.log('Creating news form modal...');
         
         const modalHTML = `
             <div class="modal-overlay modal-user-form" id="newsFormModal">
@@ -312,9 +429,17 @@ class NewsAdminView {
                                     <label for="newsCarId">ID автомобиля (опционально)</label>
                                     <input type="number" id="newsCarId" min="0">
                                 </div>
-                                <div class="form-group">
-                                    <label for="newsImageUrl">URL изображения</label>
-                                    <input type="text" id="newsImageUrl">
+                                <div class="form-group file-upload-group">
+                                    <label for="newsImageFile">Изображение новости</label>
+                                    <div class="file-upload-container">
+                                        <input type="file" id="newsImageFile" accept="image/*" class="file-input">
+                                        <div class="file-upload-preview" id="newsImagePreview">
+                                            <img id="newsPreviewImage" src="#" alt="Предпросмотр" style="display: none; max-width: 100%; max-height: 150px; border-radius: 4px;">
+                                            <div id="newsNoImageText" class="no-image-text">Фото не выбрано</div>
+                                        </div>
+                                        <input type="hidden" id="newsImageUrl" name="newsImageUrl">
+                                        <small class="form-text">Выберите изображение для новости (JPG, PNG, GIF, до 5MB)</small>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -345,12 +470,24 @@ class NewsAdminView {
             return;
         }
         
-        document.getElementById('newsId').value = news.id;
-        document.getElementById('newsTitle').value = news.title;
-        document.getElementById('newsType').value = news.type;
-        document.getElementById('newsDescription').value = news.description;
-        document.getElementById('newsImageUrl').value = news.image_url || '';
-        document.getElementById('newsCarId').value = news.car_id || '';
+        const titleInput = document.getElementById('newsTitle');
+        const typeSelect = document.getElementById('newsType');
+        const descInput = document.getElementById('newsDescription');
+        const carIdInput = document.getElementById('newsCarId');
+        const newsIdInput = document.getElementById('newsId');
+        
+        if (newsIdInput) newsIdInput.value = news.id;
+        if (titleInput) titleInput.value = news.title || '';
+        if (typeSelect) typeSelect.value = news.type || 'news';
+        if (descInput) descInput.value = news.description || '';
+        if (carIdInput) carIdInput.value = news.car_id || '';
+        
+        // Загружаем изображение, если есть
+        if (news.image_url) {
+            this.loadExistingImage(news.image_url);
+        } else {
+            this.resetFileUpload();
+        }
         
         if (news.car_id) {
             this.loadCarInfo(news.car_id);
@@ -362,35 +499,44 @@ class NewsAdminView {
         if (form) {
             form.reset();
         }
-        document.getElementById('newsId').value = '';
-        document.getElementById('carInfo').style.display = 'none';
+        
+        const newsIdInput = document.getElementById('newsId');
+        if (newsIdInput) newsIdInput.value = '';
+        
+        const carInfo = document.getElementById('carInfo');
+        if (carInfo) carInfo.style.display = 'none';
+        
+        this.resetFileUpload();
     }
     
     async loadCarInfo(carId) {
         if (!carId) return;
         
         try {
-            // Используем CarModel через новый контроллер
             const carModel = new CarModel();
             const car = await carModel.getCarById(carId);
             
             if (car) {
                 const carInfo = document.getElementById('carInfo');
-                carInfo.innerHTML = `
-                    <div class="car-info-image">
-                        <img src="${car.image_url || 'https://via.placeholder.com/100x60?text=Авто'}" 
-                             alt="${car.brand} ${car.model}"
-                             style="width: 100px; height: auto; border-radius: 4px;">
-                    </div>
-                    <div class="car-info-details">
-                        <h4 style="margin: 0 0 5px 0;">${car.brand} ${car.model}</h4>
-                        <p style="margin: 0; color: #666;">${car.year} год</p>
-                        <p style="margin: 5px 0 0 0; font-weight: bold; color: #007bff;">
-                            ${car.price ? car.price.toLocaleString('ru-RU') : '0'} ₽
-                        </p>
-                    </div>
-                `;
-                carInfo.style.display = 'flex';
+                if (carInfo) {
+                    carInfo.innerHTML = `
+                        <div style="display: flex; gap: 15px; align-items: center; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                            <div class="car-info-image">
+                                <img src="${car.image_url || 'https://via.placeholder.com/100x60?text=Авто'}" 
+                                     alt="${car.brand} ${car.model}"
+                                     style="width: 100px; height: auto; border-radius: 4px;">
+                            </div>
+                            <div class="car-info-details">
+                                <h4 style="margin: 0 0 5px 0;">${car.brand} ${car.model}</h4>
+                                <p style="margin: 0; color: #666;">${car.year} год</p>
+                                <p style="margin: 5px 0 0 0; font-weight: bold; color: #007bff;">
+                                    ${car.price ? car.price.toLocaleString('ru-RU') : '0'} ₽
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                    carInfo.style.display = 'block';
+                }
             }
         } catch (error) {
             console.error('Error loading car info:', error);
@@ -406,12 +552,14 @@ class NewsAdminView {
     }
     
     async saveNews() {
-        const newsId = document.getElementById('newsId').value;
-        const title = document.getElementById('newsTitle').value.trim();
-        const type = document.getElementById('newsType').value;
-        const description = document.getElementById('newsDescription').value.trim();
-        const imageUrl = document.getElementById('newsImageUrl').value.trim();
-        const carId = document.getElementById('newsCarId').value || null;
+        console.log('Saving news...');
+        
+        const newsId = document.getElementById('newsId')?.value;
+        const title = document.getElementById('newsTitle')?.value?.trim();
+        const type = document.getElementById('newsType')?.value;
+        const description = document.getElementById('newsDescription')?.value?.trim();
+        const imageUrl = document.getElementById('newsImageUrl')?.value?.trim();
+        const carId = document.getElementById('newsCarId')?.value || null;
         
         if (!title || !description) {
             alert('Заполните обязательные поля: заголовок и описание');
@@ -423,13 +571,14 @@ class NewsAdminView {
             type,
             description,
             car_id: carId,
-            image_url: imageUrl
+            image_url: imageUrl || null
         };
         
         console.log('Saving news data:', newsData);
         
         try {
             const result = await this.newsController.saveNews(newsData, newsId || null);
+            console.log('Save result:', result);
             
             if (result.success) {
                 this.closeNewsForm();
@@ -477,7 +626,7 @@ class NewsAdminView {
                 <tr>
                     <td colspan="6" style="text-align: center; padding: 40px;">
                         <div class="spinner" style="margin: 0 auto 20px;"></div>
-                        <p>Проверка прав доступа...</p>
+                        <p>Загрузка новостей...</p>
                     </td>
                 </tr>
             `;
@@ -510,7 +659,6 @@ class NewsAdminView {
         
         if (this.accessDenied) {
             this.accessDenied.style.display = 'block';
-            // Обновляем текст сообщения
             const messageElement = this.accessDenied.querySelector('p');
             if (messageElement) {
                 messageElement.textContent = message;
@@ -545,10 +693,24 @@ class NewsAdminView {
         const successMsg = document.createElement('div');
         successMsg.className = 'success-message';
         successMsg.textContent = message;
+        successMsg.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            z-index: 10000;
+            animation: fadeInOut 3s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
         document.body.appendChild(successMsg);
         
         setTimeout(() => {
-            successMsg.remove();
+            if (successMsg.parentNode) {
+                successMsg.remove();
+            }
         }, 3000);
     }
 }
@@ -566,12 +728,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Показываем сообщение об ошибке
         const container = document.querySelector('.admin-container') || document.body;
         container.innerHTML = `
-            <div class="access-denied" style="margin-top: 100px;">
+            <div class="access-denied" style="margin-top: 100px; text-align: center;">
                 <h2 style="color: #dc3545;">Ошибка инициализации</h2>
-                <p>${error.message}</p>
-                <div style="margin-top: 20px;">
-                    <button class="btn" onclick="window.location.reload()">Обновить страницу</button>
-                    <a href="news.html" class="btn" style="margin-left: 10px;">К новостям</a>
+                <p style="color: #666; margin-bottom: 30px;">${error.message}</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="window.location.reload()">Обновить страницу</button>
+                    <a href="news.html" class="btn btn-secondary">К новостям</a>
                 </div>
             </div>
         `;

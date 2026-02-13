@@ -366,12 +366,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const brand = car.brand || car.Brand || 'Не указана';
         const model = car.model || car.Model || 'Не указана';
         const price = car.price || car.Price || 0;
-        const status = car.status || car.Status || 'В наличии';
+
+        // ИСПРАВЛЕНО: преобразование статуса
+        let status = car.status || car.Status || 'В наличии';
+        // Преобразуем английские статусы в русские
+        if (status === 'new') status = 'Новый';
+        if (status === 'used') status = 'С пробегом';
+        if (status === 'В наличии') status = 'Новый';
 
         if (carTitle) carTitle.textContent = `${brand} ${model}`;
         if (carPrice) carPrice.textContent = formatPrice(price);
 
-        // Статус (бейдж)
+        // Статус (бейдж) - ИСПРАВЛЕНО
         if (carStatusBadge) {
             carStatusBadge.textContent = status;
             carStatusBadge.className = 'car-status-badge';
@@ -442,9 +448,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Получить CSS класс для статуса
     function getStatusClass(status) {
         const statusMap = {
-            'В наличии': 'status-in-stock',
             'Новый': 'status-new',
-            'Б/У': 'status-used',
+            'С пробегом': 'status-used',
+            'В наличии': 'status-in-stock',
             'Продано': 'status-sold',
             'Предзаказ': 'status-preorder'
         };
@@ -568,7 +574,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    
+
     function showLoginPrompt() {
         if (confirm('Для выполнения действия нужно войти в систему. Перейти к авторизации?')) {
             showAuthModal();

@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Управление автомобилями</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
     <header class="header">
         <div class="container">
@@ -64,7 +66,7 @@
             <div class="modal-body">
                 <form id="carForm">
                     <input type="hidden" id="carId">
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="carBrand">Марка *</label>
@@ -75,7 +77,7 @@
                             <input type="text" id="carModel" required>
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="carYear">Год выпуска *</label>
@@ -86,7 +88,7 @@
                             <input type="number" id="carPrice" min="0" required>
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="carMileage">Пробег (км)</label>
@@ -100,7 +102,7 @@
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="carEngine">Объем двигателя (л)</label>
@@ -111,7 +113,7 @@
                             <input type="number" id="carHorsepower" min="0">
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="carTransmission">Коробка передач</label>
@@ -132,7 +134,7 @@
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="carBody">Тип кузова</label>
@@ -150,12 +152,21 @@
                             <input type="text" id="carColor">
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
-                        <label for="carImage">Ссылка на изображение</label>
-                        <input type="url" id="carImage" placeholder="https://example.com/image.jpg">
+                        <label for="carImage">Фотография автомобиля</label>
+                        <div class="file-upload-container">
+                            <input type="file" id="carImageFile" accept="image/*" class="file-input">
+                            <div class="file-upload-preview" id="imagePreview">
+                                <img id="previewImage" src="#" alt="Предпросмотр"
+                                    style="display: none; max-width: 100%; max-height: 150px; border-radius: 4px;">
+                                <div id="noImageText" class="no-image-text">Фото не выбрано</div>
+                            </div>
+                            <input type="hidden" id="carImage" name="carImage">
+                            <small class="form-text">Выберите изображение для загрузки (JPG, PNG, GIF)</small>
+                        </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="carDescription">Описание</label>
                         <textarea id="carDescription" rows="3"></textarea>
@@ -294,4 +305,5 @@
     <script src="../views/AdminCarsView.js"></script>
     <script src="../views/SignInView.js"></script>
 </body>
+
 </html>
